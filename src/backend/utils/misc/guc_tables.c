@@ -1926,6 +1926,19 @@ struct config_bool ConfigureNamesBool[] =
 	},
 
 	{
+		{"binary_upgrade_mode", PGC_USERSET, UNGROUPED,
+			gettext_noop("Enables binary upgrade mode."),
+			gettext_noop("This is used by in-place upgrade utilities and use for other purposes is not recommended or supported. "
+						 "The behavior of this option may change in future releases without notice."),
+			NULL,
+			GUC_NO_SHOW_ALL | GUC_NO_RESET_ALL | GUC_NOT_IN_SAMPLE | GUC_DISALLOW_IN_FILE
+		},
+		&IsBinaryUpgrade,
+		false,
+		NULL, NULL, NULL
+	},
+
+	{
 		{"binary_upgrade_allow_wal_writes", PGC_SUSET, WAL_SETTINGS,
 			gettext_noop("Allow WAL writes in binary upgrade mode."),
 			NULL,
