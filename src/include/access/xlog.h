@@ -76,6 +76,7 @@ extern bool wal_init_zero;
 extern bool wal_recycle;
 extern bool *wal_consistency_checking;
 extern char *wal_consistency_checking_string;
+extern bool binary_upgrade_allow_wal_writes;
 extern bool log_checkpoints;
 extern char *recoveryRestoreCommand;
 extern char *recoveryEndCommand;

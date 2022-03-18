@@ -265,6 +265,15 @@ setup(char *argv0, bool *live_check)
 static void
 prepare_new_cluster(void)
 {
+	char		*pgoptions = getenv("PGOPTIONS");
+	char		*opts = "-c binary_upgrade_mode=on -c binary_upgrade_allow_wal_writes=on";
+
+	if (pgoptions) {
+		setenv("PGOPTIONS", psprintf("%s %s", pgoptions, opts), 1);
+	} else {
+		setenv("PGOPTIONS", opts, 1);
+	}
+
 	/*
 	 * It would make more sense to freeze after loading the schema, but that
 	 * would cause us to lose the frozenxids restored by the load. We use
@@ -289,6 +298,8 @@ prepare_new_cluster(void)
 			  new_cluster.bindir, cluster_conn_opts(&new_cluster),
 			  log_opts.verbose ? "--verbose" : "");
 	check_ok();
+
+	setenv("PGOPTIONS", pgoptions, 1);
 }
 
 

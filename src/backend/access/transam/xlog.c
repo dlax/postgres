@@ -107,6 +107,7 @@ char	   *wal_consistency_checking_string = NULL;
 bool	   *wal_consistency_checking = NULL;
 bool		wal_init_zero = true;
 bool		wal_recycle = true;
+bool		binary_upgrade_allow_wal_writes = false;
 bool		log_checkpoints = true;
 int			sync_method = DEFAULT_SYNC_METHOD;
 int			wal_level = WAL_LEVEL_MINIMAL;
@@ -1052,7 +1053,7 @@ XLogInsertRecord(XLogRecData *rdata,
 
 	/* cross-check on whether we should be here or not */
 	if (!XLogInsertAllowed())
-		elog(ERROR, "cannot make new WAL entries during recovery");
+		elog(ERROR, "cannot insert new WAL entries");
 
 	/*
 	 * Given that we're not in recovery, InsertTimeLineID is set and can't
@@ -8505,6 +8506,21 @@ XLogInsertAllowed(void)
 	 */
 	if (LocalXLogInsertAllowed >= 0)
 		return (bool) LocalXLogInsertAllowed;
+
+	/*
+	 * Else, if in binary upgrade mode, WAL writes are disabled unless explicitly
+	 * allowed.
+	 */
+	if (IsBinaryUpgrade) {
+		if (binary_upgrade_allow_wal_writes) {
+			ereport(DEBUG1,
+					(errmsg_internal("binary upgrade mode: WAL writes explicitly allowed")));
+			return true;
+		}
+		ereport(DEBUG1,
+				(errmsg_internal("binary upgrade mode: WAL writes disallowed")));
+		return false;
+	}
 
 	/*
 	 * Else, must check to see if we're still in recovery.
