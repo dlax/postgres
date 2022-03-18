@@ -129,6 +129,7 @@ char	   *wal_consistency_checking_string = NULL;
 bool	   *wal_consistency_checking = NULL;
 bool		wal_init_zero = true;
 bool		wal_recycle = true;
+bool		binary_upgrade_allow_wal_writes = false;
 bool		log_checkpoints = true;
 int			sync_method = DEFAULT_SYNC_METHOD;
 int			wal_level = WAL_LEVEL_MINIMAL;
@@ -751,7 +752,7 @@ XLogInsertRecord(XLogRecData *rdata,
 
 	/* cross-check on whether we should be here or not */
 	if (!XLogInsertAllowed())
-		elog(ERROR, "cannot make new WAL entries during recovery");
+		elog(ERROR, "cannot insert new WAL entries");
 
 	/*
 	 * Given that we're not in recovery, InsertTimeLineID is set and can't
@@ -5982,13 +5983,28 @@ GetRecoveryState(void)
 /*
  * Is this process allowed to insert new WAL records?
  *
- * Ordinarily this is essentially equivalent to !RecoveryInProgress().
- * But we also have provisions for forcing the result "true" or "false"
- * within specific processes regardless of the global state.
+ * Ordinarily this is essentially equivalent to !RecoveryInProgress() and
+ * !IsBinaryUpgrade. But we also have provisions for forcing the result "true"
+ * or "false" within specific processes regardless of the global state.
  */
 bool
 XLogInsertAllowed(void)
 {
+	/*
+	 * If in binary upgrade mode, WAL writes are disabled unless explicitly
+	 * allowed; in which case, we continue normally by checking recovery
+	 * state.
+	 */
+	if (IsBinaryUpgrade) {
+		if (!binary_upgrade_allow_wal_writes) {
+			ereport(DEBUG1,
+					(errmsg_internal("binary upgrade mode: WAL writes disallowed")));
+			return false;
+		}
+		ereport(DEBUG1,
+				(errmsg_internal("binary upgrade mode: WAL writes explicitly allowed")));
+	}
+
 	/*
 	 * If value is "unconditionally true" or "unconditionally false", just
 	 * return it.  This provides the normal fast path once recovery is known

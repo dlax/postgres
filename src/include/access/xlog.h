@@ -48,6 +48,7 @@ extern PGDLLIMPORT bool wal_init_zero;
 extern PGDLLIMPORT bool wal_recycle;
 extern PGDLLIMPORT bool *wal_consistency_checking;
 extern PGDLLIMPORT char *wal_consistency_checking_string;
+extern PGDLLIMPORT bool binary_upgrade_allow_wal_writes;
 extern PGDLLIMPORT bool log_checkpoints;
 extern PGDLLIMPORT bool track_wal_io_timing;
 extern PGDLLIMPORT int wal_decode_buffer_size;

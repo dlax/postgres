@@ -155,7 +155,7 @@ XLogBeginInsert(void)
 
 	/* cross-check on whether we should be here or not */
 	if (!XLogInsertAllowed())
-		elog(ERROR, "cannot make new WAL entries during recovery");
+		elog(ERROR, "cannot insert new WAL entries");
 
 	if (begininsert_called)
 		elog(ERROR, "XLogBeginInsert was already called");
