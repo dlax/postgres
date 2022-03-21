@@ -546,6 +546,13 @@ main(int argc, char *argv[])
 	/* Restore will need to write to the target cluster */
 	fprintf(OPF, "SET default_transaction_read_only = off;\n\n");
 
+	/*
+	 * We also need to allow WAL writes, disabled by default in binary upgrade
+	 * mode.
+	 */
+	if (binary_upgrade)
+		fprintf(OPF, "SET binary_upgrade_allow_wal_writes = on;\n\n");
+
 	/* Replicate encoding and std_strings in output */
 	fprintf(OPF, "SET client_encoding = '%s';\n",
 			pg_encoding_to_char(encoding));
