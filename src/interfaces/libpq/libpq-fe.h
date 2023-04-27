@@ -452,6 +452,12 @@ extern int	PQsendQueryParams(PGconn *conn,
 							  const int *paramLengths,
 							  const int *paramFormats,
 							  int resultFormat);
+extern int	PQsendPortal(PGconn *conn, const char *portalName,
+							  const char *command, int nParams,
+							  const Oid *paramTypes,
+							  const char *const *paramValues,
+							  const int *paramLengths,
+							  const int *paramFormats, int resultFormat);
 extern int	PQsendPrepare(PGconn *conn, const char *stmtName,
 						  const char *query, int nParams,
 						  const Oid *paramTypes);

@@ -187,3 +187,4 @@ PQsetTraceFlags           184
 PQmblenBounded            185
 PQsendFlushRequest        186
 PQconnectionUsedGSSAPI    187
+PQsendPortal              188

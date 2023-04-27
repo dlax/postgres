@@ -1534,6 +1534,49 @@ PQsendQueryParams(PGconn *conn,
 }
 
 /*
+ * PQsendPortal
+ *		Like PQsendQueryParams, but using a named portal
+ */
+int
+PQsendPortal(PGconn *conn,
+				  const char *portalName,
+				  const char *command,
+				  int nParams,
+				  const Oid *paramTypes,
+				  const char *const *paramValues,
+				  const int *paramLengths,
+				  const int *paramFormats,
+				  int resultFormat)
+{
+	if (!PQsendQueryStart(conn, true))
+		return 0;
+
+	/* check the arguments */
+	if (!command)
+	{
+		libpq_append_conn_error(conn, "command string is a null pointer");
+		return 0;
+	}
+	if (nParams < 0 || nParams > PQ_QUERY_PARAM_MAX_LIMIT)
+	{
+		libpq_append_conn_error(conn, "number of parameters must be between 0 and %d",
+						   PQ_QUERY_PARAM_MAX_LIMIT);
+		return 0;
+	}
+
+	return PQsendQueryGuts(conn,
+						   command,
+						   "",	/* use unnamed statement */
+						   portalName,
+						   nParams,
+						   paramTypes,
+						   paramValues,
+						   paramLengths,
+						   paramFormats,
+						   resultFormat);
+}
+
+/*
  * PQsendPrepare
  *	 Submit a Parse message, but don't wait for it to finish
  *
