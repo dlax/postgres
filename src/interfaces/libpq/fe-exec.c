@@ -67,6 +67,7 @@ static bool PQsendQueryStart(PGconn *conn, bool newQuery);
 static int	PQsendQueryGuts(PGconn *conn,
 							const char *command,
 							const char *stmtName,
+							const char *portalName,
 							int nParams,
 							const Oid *paramTypes,
 							const char *const *paramValues,
@@ -1523,6 +1524,7 @@ PQsendQueryParams(PGconn *conn,
 	return PQsendQueryGuts(conn,
 						   command,
 						   "",	/* use unnamed statement */
+						   "",	/* use unnamed portal */
 						   nParams,
 						   paramTypes,
 						   paramValues,
@@ -1663,6 +1665,7 @@ PQsendQueryPrepared(PGconn *conn,
 	return PQsendQueryGuts(conn,
 						   NULL,	/* no command to parse */
 						   stmtName,
+						   "",	/* use unnamed portal */
 						   nParams,
 						   NULL,	/* no param types */
 						   paramValues,
@@ -1761,6 +1764,7 @@ static int
 PQsendQueryGuts(PGconn *conn,
 				const char *command,
 				const char *stmtName,
+				const char *portalName,
 				int nParams,
 				const Oid *paramTypes,
 				const char *const *paramValues,
@@ -1778,7 +1782,7 @@ PQsendQueryGuts(PGconn *conn,
 	/*
 	 * We will send Parse (if needed), Bind, Describe Portal, Execute, Sync
 	 * (if not in pipeline mode), using specified statement name and the
-	 * unnamed portal.
+	 * portal name.
 	 */
 
 	if (command)
@@ -1809,7 +1813,7 @@ PQsendQueryGuts(PGconn *conn,
 
 	/* Construct the Bind message */
 	if (pqPutMsgStart('B', conn) < 0 ||
-		pqPuts("", conn) < 0 ||
+		pqPuts(portalName, conn) < 0 ||
 		pqPuts(stmtName, conn) < 0)
 		goto sendFailed;
 
@@ -1876,13 +1880,13 @@ PQsendQueryGuts(PGconn *conn,
 	/* construct the Describe Portal message */
 	if (pqPutMsgStart('D', conn) < 0 ||
 		pqPutc('P', conn) < 0 ||
-		pqPuts("", conn) < 0 ||
+		pqPuts(portalName, conn) < 0 ||
 		pqPutMsgEnd(conn) < 0)
 		goto sendFailed;
 
 	/* construct the Execute message */
 	if (pqPutMsgStart('E', conn) < 0 ||
-		pqPuts("", conn) < 0 ||
+		pqPuts(portalName, conn) < 0 ||
 		pqPutInt(0, 4, conn) < 0 ||
 		pqPutMsgEnd(conn) < 0)
 		goto sendFailed;
