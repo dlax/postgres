@@ -285,6 +285,9 @@ write_jsonlog(ErrorData *edata)
 								  leader->pid);
 	}
 
+	/* portal name */
+	appendJSONKeyValue(&buf, "portal", edata->portal_name, true);
+
 	/* query id */
 	appendJSONKeyValueFmt(&buf, "query_id", false, "%lld",
 						  (long long) pgstat_get_my_query_id());
