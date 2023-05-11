@@ -249,6 +249,10 @@ write_csvlog(ErrorData *edata)
 	}
 	appendStringInfoChar(&buf, ',');
 
+	/* portal name */
+	appendCSVLiteral(&buf, edata->portal_name);
+	appendStringInfoChar(&buf, ',');
+
 	/* query id */
 	appendStringInfo(&buf, "%lld", (long long) pgstat_get_my_query_id());
 
