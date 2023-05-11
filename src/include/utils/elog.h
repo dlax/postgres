@@ -218,6 +218,8 @@ extern int	errhidecontext(bool hide_ctx);
 
 extern int	errbacktrace(void);
 
+extern int	errportalname(const char *portal_name);
+
 extern int	errposition(int cursorpos);
 
 extern int	internalerrposition(int cursorpos);
@@ -462,6 +464,7 @@ typedef struct ErrorData
 	char	   *column_name;	/* name of column */
 	char	   *datatype_name;	/* name of datatype */
 	char	   *constraint_name;	/* name of constraint */
+	char	   *portal_name;	/* name of the portal */
 	int			cursorpos;		/* cursor index into query string */
 	int			internalpos;	/* cursor index into internalquery */
 	char	   *internalquery;	/* text of internally-generated query */

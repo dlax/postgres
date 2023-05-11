@@ -1439,6 +1439,22 @@ errhidecontext(bool hide_ctx)
 }
 
 /*
+ * errportalname --- add portal name to the current error
+ */
+int
+errportalname(const char *portal_name)
+{
+	ErrorData  *edata = &errordata[errordata_stack_depth];
+
+	/* we don't bother incrementing recursion_depth */
+	CHECK_STACK_DEPTH();
+
+	set_errdata_field(edata->assoc_context, &edata->portal_name, portal_name);
+
+	return 0;					/* return value does not matter */
+}
+
+/*
  * errposition --- add cursor position to the current error
  */
 int

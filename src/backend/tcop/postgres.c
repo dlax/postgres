@@ -2195,6 +2195,7 @@ exec_execute_message(const char *portal_name, long max_rows)
 						*portal_name ? portal_name : "",
 						sourceText),
 				 errhidestmt(true),
+				 errportalname(portal_name),
 				 errdetail_params(portalParams)));
 		was_logged = true;
 	}
