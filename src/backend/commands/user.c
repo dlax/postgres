@@ -2602,3 +2602,41 @@ assign_createrole_self_grant(const char *newval, void *extra)
 	createrole_self_grant_options.set =
 		(options & GRANT_ROLE_SPECIFIED_SET) != 0;
 }
+
+/*
+ * DropDatabaseSpecificRoles
+ *
+ * Delete pg_auth_members entries corresponding to a database that's being
+ * dropped.
+ */
+void
+DropDatabaseSpecificRoles(Oid databaseId)
+{
+	Relation	pg_authmem_rel;
+	ScanKeyData scankey;
+	SysScanDesc sscan;
+	HeapTuple	tup;
+
+	pg_authmem_rel = table_open(AuthMemRelationId, RowExclusiveLock);
+
+	ScanKeyInit(&scankey,
+				Anum_pg_auth_members_dbid,
+				BTEqualStrategyNumber, F_OIDEQ,
+				ObjectIdGetDatum(databaseId));
+
+	sscan = systable_beginscan(pg_authmem_rel, AuthMemMemRoleDbIndexId,
+							  true, NULL, 1, &scankey);
+
+	while (HeapTupleIsValid(tup = systable_getnext(sscan)))
+	{
+		Form_pg_auth_members authmem_form;
+		authmem_form = (Form_pg_auth_members) GETSTRUCT(tup);
+		deleteSharedDependencyRecordsFor(AuthMemRelationId,
+										 authmem_form->oid, 0);
+		CatalogTupleDelete(pg_authmem_rel, &tup->t_self);
+	}
+
+	systable_endscan(sscan);
+
+	table_close(pg_authmem_rel, RowExclusiveLock);
+}
