@@ -36,6 +36,8 @@ CATALOG(pg_auth_members,1261,AuthMemRelationId) BKI_SHARED_RELATION BKI_ROWTYPE_
 	bool		admin_option;	/* granted with admin option? */
 	bool		inherit_option; /* exercise privileges without SET ROLE? */
 	bool		set_option;		/* use SET ROLE to the target role? */
+	Oid			dbid BKI_LOOKUP_OPT(pg_database);	/* ID of a database this
+													 * mapping is effective in */
 } FormData_pg_auth_members;
 
 /* ----------------
