@@ -4763,7 +4763,7 @@ InitializeSearchPath(void)
 									  (Datum) 0);
 
 		/* role membership may affect ACLs */
-		CacheRegisterSyscacheCallback(AUTHMEMROLEMEM,
+		CacheRegisterSyscacheCallback(AUTHMEMROLEMEMDB,
 									  InvalidationCallback,
 									  (Datum) 0);
 
