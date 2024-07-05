@@ -4980,6 +4980,51 @@ roles_list_append(List *roles_list, bloom_filter **bf, Oid role)
 }
 
 /*
+ * Append role memberships to the list of roles
+ */
+static void
+append_role_memberships(List *roles_list, enum RoleRecurseType type,
+						Oid admin_of, Oid *admin_role, Oid memberid,
+						bloom_filter *bf)
+{
+	CatCList   *memlist;
+	int			i;
+
+	memlist = SearchSysCacheList1(AUTHMEMMEMROLE,
+								  ObjectIdGetDatum(memberid));
+	for (i = 0; i < memlist->n_members; i++)
+	{
+		HeapTuple	tup = &memlist->members[i]->tuple;
+		Form_pg_auth_members form = (Form_pg_auth_members) GETSTRUCT(tup);
+		Oid			otherid = form->roleid;
+
+		/*
+		 * While otherid==InvalidOid shouldn't appear in the catalog, the
+		 * OidIsValid() avoids crashing if that arises.
+		 */
+		if (otherid == admin_of && form->admin_option &&
+			OidIsValid(admin_of) && !OidIsValid(*admin_role))
+			*admin_role = memberid;
+
+		/* If we're supposed to ignore non-heritable grants, do so. */
+		if (type == ROLERECURSE_PRIVS && !form->inherit_option)
+			continue;
+
+		/* If we're supposed to ignore non-SET grants, do so. */
+		if (type == ROLERECURSE_SETROLE && !form->set_option)
+			continue;
+
+		/*
+		 * Even though there shouldn't be any loops in the membership graph,
+		 * we must test for having already seen this role. It is legal for
+		 * instance to have both A->B and A->C->B.
+		 */
+		roles_list = roles_list_append(roles_list, &bf, otherid);
+	}
+	ReleaseSysCacheList(memlist);
+}
+
+/*
  * Get a list of roles that the specified roleid is a member of
  *
  * Type ROLERECURSE_MEMBERS recurses through all grants; ROLERECURSE_PRIVS
@@ -5052,42 +5097,10 @@ roles_is_member_of(Oid roleid, enum RoleRecurseType type,
 	foreach(l, roles_list)
 	{
 		Oid			memberid = lfirst_oid(l);
-		CatCList   *memlist;
-		int			i;
 
 		/* Find roles that memberid is directly a member of */
-		memlist = SearchSysCacheList1(AUTHMEMMEMROLE,
-									  ObjectIdGetDatum(memberid));
-		for (i = 0; i < memlist->n_members; i++)
-		{
-			HeapTuple	tup = &memlist->members[i]->tuple;
-			Form_pg_auth_members form = (Form_pg_auth_members) GETSTRUCT(tup);
-			Oid			otherid = form->roleid;
-
-			/*
-			 * While otherid==InvalidOid shouldn't appear in the catalog, the
-			 * OidIsValid() avoids crashing if that arises.
-			 */
-			if (otherid == admin_of && form->admin_option &&
-				OidIsValid(admin_of) && !OidIsValid(*admin_role))
-				*admin_role = memberid;
-
-			/* If we're supposed to ignore non-heritable grants, do so. */
-			if (type == ROLERECURSE_PRIVS && !form->inherit_option)
-				continue;
-
-			/* If we're supposed to ignore non-SET grants, do so. */
-			if (type == ROLERECURSE_SETROLE && !form->set_option)
-				continue;
-
-			/*
-			 * Even though there shouldn't be any loops in the membership
-			 * graph, we must test for having already seen this role. It is
-			 * legal for instance to have both A->B and A->C->B.
-			 */
-			roles_list = roles_list_append(roles_list, &bf, otherid);
-		}
-		ReleaseSysCacheList(memlist);
+		append_role_memberships(roles_list, type, admin_of, admin_role,
+								memberid, bf);
 
 		/* implement pg_database_owner implicit membership */
 		if (memberid == dba && OidIsValid(dba))
