@@ -92,11 +92,11 @@ check_password_hook_type check_password_hook = NULL;
 
 static void AddRoleMems(Oid currentUserId, const char *rolename, Oid roleid,
 						List *memberSpecs, List *memberIds,
-						Oid grantorId, GrantRoleOptions *popt);
+						Oid grantorId, GrantRoleOptions *popt, Oid db_id);
 static void DelRoleMems(Oid currentUserId, const char *rolename, Oid roleid,
 						List *memberSpecs, List *memberIds,
 						Oid grantorId, GrantRoleOptions *popt,
-						DropBehavior behavior);
+						DropBehavior behavior, Oid db_id);
 static void check_role_membership_authorization(Oid currentUserId, Oid roleid,
 												bool is_grant);
 static Oid	check_role_grantor(Oid currentUserId, Oid roleid, Oid grantorId,
@@ -521,7 +521,7 @@ CreateRole(ParseState *pstate, CreateRoleStmt *stmt)
 			AddRoleMems(currentUserId, oldrolename, oldroleid,
 						thisrole_list,
 						thisrole_oidlist,
-						InvalidOid, &popt);
+						InvalidOid, &popt, InvalidOid);
 
 			ReleaseSysCache(oldroletup);
 		}
@@ -557,7 +557,7 @@ CreateRole(ParseState *pstate, CreateRoleStmt *stmt)
 
 		AddRoleMems(BOOTSTRAP_SUPERUSERID, stmt->role, roleid,
 					memberSpecs, memberIds,
-					BOOTSTRAP_SUPERUSERID, &poptself);
+					BOOTSTRAP_SUPERUSERID, &poptself, InvalidOid);
 
 		/*
 		 * We must make the implicit grant visible to the code below, else the
@@ -577,7 +577,7 @@ CreateRole(ParseState *pstate, CreateRoleStmt *stmt)
 		if (createrole_self_grant_enabled)
 			AddRoleMems(currentUserId, stmt->role, roleid,
 						memberSpecs, memberIds,
-						currentUserId, &createrole_self_grant_options);
+						currentUserId, &createrole_self_grant_options, InvalidOid);
 	}
 
 	/*
@@ -589,12 +589,12 @@ CreateRole(ParseState *pstate, CreateRoleStmt *stmt)
 	 */
 	AddRoleMems(currentUserId, stmt->role, roleid,
 				rolemembers, roleSpecsToIds(rolemembers),
-				InvalidOid, &popt);
+				InvalidOid, &popt, InvalidOid);
 	popt.specified |= GRANT_ROLE_SPECIFIED_ADMIN;
 	popt.admin = true;
 	AddRoleMems(currentUserId, stmt->role, roleid,
 				adminmembers, roleSpecsToIds(adminmembers),
-				InvalidOid, &popt);
+				InvalidOid, &popt, InvalidOid);
 
 	/* Post creation hook for new role */
 	InvokeObjectPostCreateHook(AuthIdRelationId, roleid, 0);
@@ -977,11 +977,11 @@ AlterRole(ParseState *pstate, AlterRoleStmt *stmt)
 		if (stmt->action == +1) /* add members to role */
 			AddRoleMems(currentUserId, rolename, roleid,
 						rolemembers, roleSpecsToIds(rolemembers),
-						InvalidOid, &popt);
+						InvalidOid, &popt, InvalidOid);
 		else if (stmt->action == -1)	/* drop members from role */
 			DelRoleMems(currentUserId, rolename, roleid,
 						rolemembers, roleSpecsToIds(rolemembers),
-						InvalidOid, &popt, DROP_RESTRICT);
+						InvalidOid, &popt, DROP_RESTRICT, InvalidOid);
 	}
 
 	/*
@@ -1561,11 +1561,11 @@ GrantRole(ParseState *pstate, GrantRoleStmt *stmt)
 		if (stmt->is_grant)
 			AddRoleMems(currentUserId, rolename, roleid,
 						stmt->grantee_roles, grantee_ids,
-						grantor, &popt);
+						grantor, &popt, InvalidOid);
 		else
 			DelRoleMems(currentUserId, rolename, roleid,
 						stmt->grantee_roles, grantee_ids,
-						grantor, &popt, stmt->behavior);
+						grantor, &popt, stmt->behavior, InvalidOid);
 	}
 
 	/*
@@ -1676,11 +1676,12 @@ roleSpecsToIds(List *memberNames)
  * grantorId: OID that should be recorded as having granted the membership
  * (InvalidOid if not set explicitly)
  * popt: information about grant options
+ * db_id: OID of the database in which membership should be granted
  */
 static void
 AddRoleMems(Oid currentUserId, const char *rolename, Oid roleid,
 			List *memberSpecs, List *memberIds,
-			Oid grantorId, GrantRoleOptions *popt)
+			Oid grantorId, GrantRoleOptions *popt, Oid db_id)
 {
 	Relation	pg_authmem_rel;
 	TupleDesc	pg_authmem_dsc;
@@ -1974,11 +1975,12 @@ AddRoleMems(Oid currentUserId, const char *rolename, Oid roleid,
  * grantorId: who is revoking the membership
  * popt: information about grant options
  * behavior: RESTRICT or CASCADE behavior for recursive removal
+ * db_id: OID of the database in which membership should be removed
  */
 static void
 DelRoleMems(Oid currentUserId, const char *rolename, Oid roleid,
 			List *memberSpecs, List *memberIds,
-			Oid grantorId, GrantRoleOptions *popt, DropBehavior behavior)
+			Oid grantorId, GrantRoleOptions *popt, DropBehavior behavior, Oid db_id)
 {
 	Relation	pg_authmem_rel;
 	TupleDesc	pg_authmem_dsc;
