@@ -9,6 +9,7 @@ tests += {
       'rolenames',
       'alter_system_table',
       'guc_privs',
+      'role_membership',
     ],
     'runningcheck': false,
   },
