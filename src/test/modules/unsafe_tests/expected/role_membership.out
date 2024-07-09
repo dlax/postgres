@@ -2,15 +2,14 @@
 -- Tests for database-specific role memberships.
 -- This is unsafe because roles and databases will added / removed / modified.
 --
-CREATE ROLE role_admin LOGIN SUPERUSER;
-\connect postgres role_admin
+\connect postgres
 CREATE FUNCTION check_memberships()
  RETURNS TABLE (role name, member name, grantor name, admin_option boolean, datname name)
  AS $$
 SELECT
   r.rolname as role,
   m.rolname as member,
-  g.rolname as grantor,
+  CASE WHEN g.rolsuper THEN 'superuser' ELSE g.rolname END as grantor,
   admin_option,
   d.datname
 FROM pg_auth_members a
@@ -23,9 +22,12 @@ WHERE
 ORDER BY
   1, 2, 5
 $$ LANGUAGE SQL;
+CREATE ROLE role_admin LOGIN CREATEROLE CREATEDB;
+GRANT pg_read_all_data TO role_admin WITH ADMIN OPTION;
 -- Populate test databases
 \connect template1
 CREATE TABLE data AS SELECT generate_series(1, 3);
+\connect template1 role_admin;
 CREATE DATABASE db_1;
 CREATE DATABASE db_2;
 CREATE DATABASE db_3;
@@ -73,6 +75,7 @@ NOTICE:  role "role_read_template1" has already been granted membership in role 
 SELECT * FROM check_memberships();
            role           |          member          |  grantor   | admin_option |  datname  
 --------------------------+--------------------------+------------+--------------+-----------
+ pg_read_all_data         | role_admin               | superuser  | t            | 
  pg_read_all_data         | role_read_12             | role_admin | f            | db_1
  pg_read_all_data         | role_read_12             | role_admin | f            | db_2
  pg_read_all_data         | role_read_34             | role_admin | t            | db_3
@@ -80,11 +83,19 @@ SELECT * FROM check_memberships();
  pg_read_all_data         | role_read_all_noinherit  | role_admin | f            | template1
  pg_read_all_data         | role_read_all_with_admin | role_admin | t            | 
  pg_read_all_data         | role_read_template1      | role_admin | t            | template1
+ role_inherited_3         | role_admin               | superuser  | t            | 
+ role_inherited_34        | role_admin               | superuser  | t            | 
+ role_read_12             | role_admin               | superuser  | t            | 
  role_read_12             | role_read_12_noinherit   | role_admin | f            | 
+ role_read_12_noinherit   | role_admin               | superuser  | t            | 
+ role_read_34             | role_admin               | superuser  | t            | 
  role_read_34             | role_inherited_3         | role_admin | f            | db_3
  role_read_34             | role_inherited_34        | role_admin | f            | 
+ role_read_all_noinherit  | role_admin               | superuser  | t            | 
+ role_read_all_with_admin | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
-(11 rows)
+ role_read_template1      | role_admin               | superuser  | t            | 
+(20 rows)
 
 -- Test membership privileges (db_1)
 \connect db_1
@@ -377,37 +388,55 @@ REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_template1 IN DATABASE te
 SELECT * FROM check_memberships();
            role           |          member          |  grantor   | admin_option |  datname  
 --------------------------+--------------------------+------------+--------------+-----------
+ pg_read_all_data         | role_admin               | superuser  | t            | 
  pg_read_all_data         | role_read_12             | role_admin | f            | db_1
  pg_read_all_data         | role_read_12             | role_admin | f            | db_2
  pg_read_all_data         | role_read_34             | role_admin | t            | db_3
  pg_read_all_data         | role_read_34             | role_admin | t            | db_4
  pg_read_all_data         | role_read_all_noinherit  | role_admin | f            | template1
  pg_read_all_data         | role_read_all_with_admin | role_admin | t            | 
- pg_read_all_data         | role_read_template1      | role_admin | f            | template1
+ pg_read_all_data         | role_read_template1      | role_admin | t            | template1
+ role_inherited_3         | role_admin               | superuser  | t            | 
+ role_inherited_34        | role_admin               | superuser  | t            | 
+ role_read_12             | role_admin               | superuser  | t            | 
  role_read_12             | role_read_12_noinherit   | role_admin | f            | 
+ role_read_12_noinherit   | role_admin               | superuser  | t            | 
+ role_read_34             | role_admin               | superuser  | t            | 
  role_read_34             | role_inherited_3         | role_admin | f            | db_3
  role_read_34             | role_inherited_34        | role_admin | f            | 
+ role_read_all_noinherit  | role_admin               | superuser  | t            | 
+ role_read_all_with_admin | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
-(11 rows)
+ role_read_template1      | role_admin               | superuser  | t            | 
+(20 rows)
 
 -- Should warn if revoking a non-existent membership
 REVOKE pg_read_all_data FROM role_read_template1 IN DATABASE template1; -- success
 REVOKE pg_read_all_data FROM role_read_template1 IN DATABASE template1; -- warning
-WARNING:  role "role_read_template1" is not a member of role "pg_read_all_data" in database "template1"
+WARNING:  role "role_read_template1" has not been granted membership in role "pg_read_all_data" by role "role_admin"
 SELECT * FROM check_memberships();
            role           |          member          |  grantor   | admin_option |  datname  
 --------------------------+--------------------------+------------+--------------+-----------
+ pg_read_all_data         | role_admin               | superuser  | t            | 
  pg_read_all_data         | role_read_12             | role_admin | f            | db_1
  pg_read_all_data         | role_read_12             | role_admin | f            | db_2
  pg_read_all_data         | role_read_34             | role_admin | t            | db_3
  pg_read_all_data         | role_read_34             | role_admin | t            | db_4
  pg_read_all_data         | role_read_all_noinherit  | role_admin | f            | template1
  pg_read_all_data         | role_read_all_with_admin | role_admin | t            | 
+ role_inherited_3         | role_admin               | superuser  | t            | 
+ role_inherited_34        | role_admin               | superuser  | t            | 
+ role_read_12             | role_admin               | superuser  | t            | 
  role_read_12             | role_read_12_noinherit   | role_admin | f            | 
+ role_read_12_noinherit   | role_admin               | superuser  | t            | 
+ role_read_34             | role_admin               | superuser  | t            | 
  role_read_34             | role_inherited_3         | role_admin | f            | db_3
  role_read_34             | role_inherited_34        | role_admin | f            | 
+ role_read_all_noinherit  | role_admin               | superuser  | t            | 
+ role_read_all_with_admin | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
-(10 rows)
+ role_read_template1      | role_admin               | superuser  | t            | 
+(19 rows)
 
 -- Revoke should only apply to the specified level
 REVOKE pg_read_all_data FROM role_read_12; -- warning
@@ -415,17 +444,25 @@ WARNING:  role "role_read_12" is not a member of role "pg_read_all_data"
 SELECT * FROM check_memberships();
            role           |          member          |  grantor   | admin_option |  datname  
 --------------------------+--------------------------+------------+--------------+-----------
- pg_read_all_data         | role_read_12             | role_admin | f            | db_1
+ pg_read_all_data         | role_admin               | superuser  | t            | 
  pg_read_all_data         | role_read_12             | role_admin | f            | db_2
  pg_read_all_data         | role_read_34             | role_admin | t            | db_3
  pg_read_all_data         | role_read_34             | role_admin | t            | db_4
  pg_read_all_data         | role_read_all_noinherit  | role_admin | f            | template1
  pg_read_all_data         | role_read_all_with_admin | role_admin | t            | 
+ role_inherited_3         | role_admin               | superuser  | t            | 
+ role_inherited_34        | role_admin               | superuser  | t            | 
+ role_read_12             | role_admin               | superuser  | t            | 
  role_read_12             | role_read_12_noinherit   | role_admin | f            | 
+ role_read_12_noinherit   | role_admin               | superuser  | t            | 
+ role_read_34             | role_admin               | superuser  | t            | 
  role_read_34             | role_inherited_3         | role_admin | f            | db_3
  role_read_34             | role_inherited_34        | role_admin | f            | 
+ role_read_all_noinherit  | role_admin               | superuser  | t            | 
+ role_read_all_with_admin | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
-(10 rows)
+ role_read_template1      | role_admin               | superuser  | t            | 
+(18 rows)
 
 -- Ensure cluster-wide admin option can grant cluster-wide and in specific databases
 CREATE ROLE role_granted;
@@ -437,22 +474,32 @@ GRANT role_read_34 TO role_granted; -- error
 ERROR:  permission denied to grant role "role_read_34"
 DETAIL:  Only roles with the ADMIN option on role "role_read_34" may grant this role.
 SELECT * FROM check_memberships();
-           role           |          member          |         grantor          | admin_option |  datname  
---------------------------+--------------------------+--------------------------+--------------+-----------
- pg_read_all_data         | role_granted             | role_read_all_with_admin | f            | db_1
- pg_read_all_data         | role_granted             | role_read_all_with_admin | f            | postgres
- pg_read_all_data         | role_granted             | role_read_all_with_admin | f            | 
- pg_read_all_data         | role_read_12             | role_admin               | f            | db_1
- pg_read_all_data         | role_read_12             | role_admin               | f            | db_2
- pg_read_all_data         | role_read_34             | role_admin               | t            | db_3
- pg_read_all_data         | role_read_34             | role_admin               | t            | db_4
- pg_read_all_data         | role_read_all_noinherit  | role_admin               | f            | template1
- pg_read_all_data         | role_read_all_with_admin | role_admin               | t            | 
- role_read_12             | role_read_12_noinherit   | role_admin               | f            | 
- role_read_34             | role_inherited_3         | role_admin               | f            | db_3
- role_read_34             | role_inherited_34        | role_admin               | f            | 
- role_read_all_with_admin | role_read_all_noinherit  | role_admin               | f            | 
-(13 rows)
+           role           |          member          |  grantor   | admin_option |  datname  
+--------------------------+--------------------------+------------+--------------+-----------
+ pg_read_all_data         | role_admin               | superuser  | t            | 
+ pg_read_all_data         | role_granted             | role_admin | f            | db_1
+ pg_read_all_data         | role_granted             | role_admin | f            | postgres
+ pg_read_all_data         | role_granted             | role_admin | f            | 
+ pg_read_all_data         | role_read_12             | role_admin | f            | db_2
+ pg_read_all_data         | role_read_34             | role_admin | t            | db_3
+ pg_read_all_data         | role_read_34             | role_admin | t            | db_4
+ pg_read_all_data         | role_read_all_noinherit  | role_admin | f            | template1
+ pg_read_all_data         | role_read_all_with_admin | role_admin | t            | 
+ role_granted             | role_admin               | superuser  | t            | 
+ role_inherited_3         | role_admin               | superuser  | t            | 
+ role_inherited_34        | role_admin               | superuser  | t            | 
+ role_read_12             | role_admin               | superuser  | t            | 
+ role_read_12             | role_read_12_noinherit   | role_admin | f            | 
+ role_read_12_noinherit   | role_admin               | superuser  | t            | 
+ role_read_34             | role_admin               | superuser  | t            | 
+ role_read_34             | role_granted             | role_admin | f            | 
+ role_read_34             | role_inherited_3         | role_admin | f            | db_3
+ role_read_34             | role_inherited_34        | role_admin | f            | 
+ role_read_all_noinherit  | role_admin               | superuser  | t            | 
+ role_read_all_with_admin | role_admin               | superuser  | t            | 
+ role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
+ role_read_template1      | role_admin               | superuser  | t            | 
+(23 rows)
 
 -- Ensure database-specific admin option can only grant within that database
 SET SESSION AUTHORIZATION role_read_34;
@@ -488,59 +535,87 @@ GRANT pg_read_all_data TO role_granted IN DATABASE db_4; -- notice
 NOTICE:  role "role_granted" has already been granted membership in role "pg_read_all_data" in database "db_4" by role "role_read_34"
 \connect postgres role_admin
 SELECT * FROM check_memberships();
-           role           |          member          |         grantor          | admin_option |  datname  
---------------------------+--------------------------+--------------------------+--------------+-----------
- pg_read_all_data         | role_granted             | role_read_all_with_admin | f            | db_1
- pg_read_all_data         | role_granted             | role_read_34             | f            | db_3
- pg_read_all_data         | role_granted             | role_read_34             | f            | db_4
- pg_read_all_data         | role_granted             | role_read_all_with_admin | f            | postgres
- pg_read_all_data         | role_granted             | role_read_all_with_admin | f            | 
- pg_read_all_data         | role_read_12             | role_admin               | f            | db_1
- pg_read_all_data         | role_read_12             | role_admin               | f            | db_2
- pg_read_all_data         | role_read_34             | role_admin               | t            | db_3
- pg_read_all_data         | role_read_34             | role_admin               | t            | db_4
- pg_read_all_data         | role_read_all_noinherit  | role_admin               | f            | template1
- pg_read_all_data         | role_read_all_with_admin | role_admin               | t            | 
- role_read_12             | role_read_12_noinherit   | role_admin               | f            | 
- role_read_34             | role_inherited_3         | role_admin               | f            | db_3
- role_read_34             | role_inherited_34        | role_admin               | f            | 
- role_read_all_with_admin | role_read_all_noinherit  | role_admin               | f            | 
-(15 rows)
+           role           |          member          |  grantor   | admin_option |  datname  
+--------------------------+--------------------------+------------+--------------+-----------
+ pg_read_all_data         | role_admin               | superuser  | t            | 
+ pg_read_all_data         | role_granted             | role_admin | f            | db_1
+ pg_read_all_data         | role_granted             | role_admin | f            | db_3
+ pg_read_all_data         | role_granted             | role_admin | f            | db_4
+ pg_read_all_data         | role_granted             | role_admin | f            | postgres
+ pg_read_all_data         | role_granted             | role_admin | f            | 
+ pg_read_all_data         | role_read_12             | role_admin | f            | db_2
+ pg_read_all_data         | role_read_34             | role_admin | t            | db_3
+ pg_read_all_data         | role_read_34             | role_admin | t            | db_4
+ pg_read_all_data         | role_read_all_noinherit  | role_admin | f            | template1
+ pg_read_all_data         | role_read_all_with_admin | role_admin | t            | 
+ role_granted             | role_admin               | superuser  | t            | 
+ role_inherited_3         | role_admin               | superuser  | t            | 
+ role_inherited_34        | role_admin               | superuser  | t            | 
+ role_read_12             | role_admin               | superuser  | t            | 
+ role_read_12             | role_read_12_noinherit   | role_admin | f            | 
+ role_read_12_noinherit   | role_admin               | superuser  | t            | 
+ role_read_34             | role_admin               | superuser  | t            | 
+ role_read_34             | role_granted             | role_admin | f            | 
+ role_read_34             | role_inherited_3         | role_admin | f            | db_3
+ role_read_34             | role_inherited_34        | role_admin | f            | 
+ role_read_all_noinherit  | role_admin               | superuser  | t            | 
+ role_read_all_with_admin | role_admin               | superuser  | t            | 
+ role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
+ role_read_template1      | role_admin               | superuser  | t            | 
+(25 rows)
 
 -- Should clean up the membership table when dropping a database
 \connect postgres role_admin
 DROP DATABASE db_3;
 SELECT * FROM check_memberships();
-           role           |          member          |         grantor          | admin_option |  datname  
---------------------------+--------------------------+--------------------------+--------------+-----------
- pg_read_all_data         | role_granted             | role_read_all_with_admin | f            | db_1
- pg_read_all_data         | role_granted             | role_read_34             | f            | db_4
- pg_read_all_data         | role_granted             | role_read_all_with_admin | f            | postgres
- pg_read_all_data         | role_granted             | role_read_all_with_admin | f            | 
- pg_read_all_data         | role_read_12             | role_admin               | f            | db_1
- pg_read_all_data         | role_read_12             | role_admin               | f            | db_2
- pg_read_all_data         | role_read_34             | role_admin               | t            | db_4
- pg_read_all_data         | role_read_all_noinherit  | role_admin               | f            | template1
- pg_read_all_data         | role_read_all_with_admin | role_admin               | t            | 
- role_read_12             | role_read_12_noinherit   | role_admin               | f            | 
- role_read_34             | role_inherited_34        | role_admin               | f            | 
- role_read_all_with_admin | role_read_all_noinherit  | role_admin               | f            | 
-(12 rows)
+           role           |          member          |  grantor   | admin_option |  datname  
+--------------------------+--------------------------+------------+--------------+-----------
+ pg_read_all_data         | role_admin               | superuser  | t            | 
+ pg_read_all_data         | role_granted             | role_admin | f            | db_1
+ pg_read_all_data         | role_granted             | role_admin | f            | db_4
+ pg_read_all_data         | role_granted             | role_admin | f            | postgres
+ pg_read_all_data         | role_granted             | role_admin | f            | 
+ pg_read_all_data         | role_read_12             | role_admin | f            | db_2
+ pg_read_all_data         | role_read_34             | role_admin | t            | db_4
+ pg_read_all_data         | role_read_all_noinherit  | role_admin | f            | template1
+ pg_read_all_data         | role_read_all_with_admin | role_admin | t            | 
+ role_granted             | role_admin               | superuser  | t            | 
+ role_inherited_3         | role_admin               | superuser  | t            | 
+ role_inherited_34        | role_admin               | superuser  | t            | 
+ role_read_12             | role_admin               | superuser  | t            | 
+ role_read_12             | role_read_12_noinherit   | role_admin | f            | 
+ role_read_12_noinherit   | role_admin               | superuser  | t            | 
+ role_read_34             | role_admin               | superuser  | t            | 
+ role_read_34             | role_granted             | role_admin | f            | 
+ role_read_34             | role_inherited_34        | role_admin | f            | 
+ role_read_all_noinherit  | role_admin               | superuser  | t            | 
+ role_read_all_with_admin | role_admin               | superuser  | t            | 
+ role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
+ role_read_template1      | role_admin               | superuser  | t            | 
+(22 rows)
 
 -- Should clean up the membership table when dropping a role
 DROP ROLE role_read_34;
 SELECT * FROM check_memberships();
-           role           |          member          |         grantor          | admin_option |  datname  
---------------------------+--------------------------+--------------------------+--------------+-----------
- pg_read_all_data         | role_granted             | role_read_all_with_admin | f            | db_1
- pg_read_all_data         | role_granted             |                          | f            | db_4
- pg_read_all_data         | role_granted             | role_read_all_with_admin | f            | postgres
- pg_read_all_data         | role_granted             | role_read_all_with_admin | f            | 
- pg_read_all_data         | role_read_12             | role_admin               | f            | db_1
- pg_read_all_data         | role_read_12             | role_admin               | f            | db_2
- pg_read_all_data         | role_read_all_noinherit  | role_admin               | f            | template1
- pg_read_all_data         | role_read_all_with_admin | role_admin               | t            | 
- role_read_12             | role_read_12_noinherit   | role_admin               | f            | 
- role_read_all_with_admin | role_read_all_noinherit  | role_admin               | f            | 
-(10 rows)
+           role           |          member          |  grantor   | admin_option |  datname  
+--------------------------+--------------------------+------------+--------------+-----------
+ pg_read_all_data         | role_admin               | superuser  | t            | 
+ pg_read_all_data         | role_granted             | role_admin | f            | db_1
+ pg_read_all_data         | role_granted             | role_admin | f            | db_4
+ pg_read_all_data         | role_granted             | role_admin | f            | postgres
+ pg_read_all_data         | role_granted             | role_admin | f            | 
+ pg_read_all_data         | role_read_12             | role_admin | f            | db_2
+ pg_read_all_data         | role_read_all_noinherit  | role_admin | f            | template1
+ pg_read_all_data         | role_read_all_with_admin | role_admin | t            | 
+ role_granted             | role_admin               | superuser  | t            | 
+ role_inherited_3         | role_admin               | superuser  | t            | 
+ role_inherited_34        | role_admin               | superuser  | t            | 
+ role_read_12             | role_admin               | superuser  | t            | 
+ role_read_12             | role_read_12_noinherit   | role_admin | f            | 
+ role_read_12_noinherit   | role_admin               | superuser  | t            | 
+ role_read_all_noinherit  | role_admin               | superuser  | t            | 
+ role_read_all_with_admin | role_admin               | superuser  | t            | 
+ role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
+ role_read_template1      | role_admin               | superuser  | t            | 
+(18 rows)
 

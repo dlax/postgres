@@ -3,17 +3,14 @@
 -- This is unsafe because roles and databases will added / removed / modified.
 --
 
-CREATE ROLE role_admin LOGIN SUPERUSER;
-
-\connect postgres role_admin
-
+\connect postgres
 CREATE FUNCTION check_memberships()
  RETURNS TABLE (role name, member name, grantor name, admin_option boolean, datname name)
  AS $$
 SELECT
   r.rolname as role,
   m.rolname as member,
-  g.rolname as grantor,
+  CASE WHEN g.rolsuper THEN 'superuser' ELSE g.rolname END as grantor,
   admin_option,
   d.datname
 FROM pg_auth_members a
@@ -27,9 +24,14 @@ ORDER BY
   1, 2, 5
 $$ LANGUAGE SQL;
 
+CREATE ROLE role_admin LOGIN CREATEROLE CREATEDB;
+GRANT pg_read_all_data TO role_admin WITH ADMIN OPTION;
+
 -- Populate test databases
 \connect template1
 CREATE TABLE data AS SELECT generate_series(1, 3);
+
+\connect template1 role_admin;
 
 CREATE DATABASE db_1;
 CREATE DATABASE db_2;
