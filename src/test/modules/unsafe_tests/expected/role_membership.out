@@ -61,13 +61,13 @@ GRANT pg_read_all_data TO role_read_template1 IN DATABASE non_existent; -- error
 ERROR:  database "non_existent" does not exist
 -- Should warn on duplicate grants
 GRANT pg_read_all_data TO role_read_all_with_admin; -- notice
-NOTICE:  role "role_read_all_with_admin" is already a member of role "pg_read_all_data"
+NOTICE:  role "role_read_all_with_admin" has already been granted membership in role "pg_read_all_data" by role "role_admin"
 GRANT pg_read_all_data TO role_read_template1 IN DATABASE template1; -- notice
-NOTICE:  role "role_read_template1" is already a member of role "pg_read_all_data" in database "template1"
+NOTICE:  role "role_read_template1" has already been granted membership in role "pg_read_all_data" in database "template1" by role "role_admin"
 -- Should not warn if adjusting admin option
 GRANT pg_read_all_data TO role_read_template1 IN DATABASE template1 WITH ADMIN OPTION; -- silent
 GRANT pg_read_all_data TO role_read_template1 IN DATABASE template1 WITH ADMIN OPTION; -- notice
-NOTICE:  role "role_read_template1" is already a member of role "pg_read_all_data" in database "template1"
+NOTICE:  role "role_read_template1" has already been granted membership in role "pg_read_all_data" in database "template1" by role "role_admin"
 -- Check membership table
 \connect postgres role_admin
 SELECT * FROM check_memberships();
@@ -434,7 +434,8 @@ GRANT pg_read_all_data TO role_granted; -- success
 GRANT pg_read_all_data TO role_granted IN CURRENT DATABASE; -- success
 GRANT pg_read_all_data TO role_granted IN DATABASE db_1; -- success
 GRANT role_read_34 TO role_granted; -- error
-ERROR:  must have admin option on role "role_read_34"
+ERROR:  permission denied to grant role "role_read_34"
+DETAIL:  Only roles with the ADMIN option on role "role_read_34" may grant this role.
 SELECT * FROM check_memberships();
            role           |          member          |         grantor          | admin_option |  datname  
 --------------------------+--------------------------+--------------------------+--------------+-----------
@@ -456,9 +457,11 @@ SELECT * FROM check_memberships();
 -- Ensure database-specific admin option can only grant within that database
 SET SESSION AUTHORIZATION role_read_34;
 GRANT pg_read_all_data TO role_granted; -- error
-ERROR:  must have admin option on role "pg_read_all_data"
+ERROR:  permission denied to grant role "pg_read_all_data"
+DETAIL:  Only roles with the ADMIN option on role "pg_read_all_data" may grant this role.
 GRANT pg_read_all_data TO role_granted IN CURRENT DATABASE; -- error
-ERROR:  must have admin option on role "pg_read_all_data"
+ERROR:  permission denied to grant role "pg_read_all_data"
+DETAIL:  Only roles with the ADMIN option on role "pg_read_all_data" may grant this role.
 GRANT pg_read_all_data TO role_granted IN DATABASE db_3; -- error
 ERROR:  must have admin option on role "pg_read_all_data"
 GRANT pg_read_all_data TO role_granted IN DATABASE db_4; -- error
@@ -466,21 +469,23 @@ ERROR:  must have admin option on role "pg_read_all_data"
 \connect db_3
 SET SESSION AUTHORIZATION role_read_34;
 GRANT pg_read_all_data TO role_granted; -- error
-ERROR:  must have admin option on role "pg_read_all_data"
+ERROR:  permission denied to grant role "pg_read_all_data"
+DETAIL:  Only roles with the ADMIN option on role "pg_read_all_data" may grant this role.
 GRANT pg_read_all_data TO role_granted IN CURRENT DATABASE; -- success
 GRANT pg_read_all_data TO role_granted IN DATABASE db_3; -- notice
-NOTICE:  role "role_granted" is already a member of role "pg_read_all_data" in database "db_3"
+NOTICE:  role "role_granted" has already been granted membership in role "pg_read_all_data" in database "db_3" by role "role_read_34"
 GRANT pg_read_all_data TO role_granted IN DATABASE db_4; -- error
 ERROR:  must have admin option on role "pg_read_all_data"
 \connect db_4
 SET SESSION AUTHORIZATION role_read_34;
 GRANT pg_read_all_data TO role_granted; -- error
-ERROR:  must have admin option on role "pg_read_all_data"
+ERROR:  permission denied to grant role "pg_read_all_data"
+DETAIL:  Only roles with the ADMIN option on role "pg_read_all_data" may grant this role.
 GRANT pg_read_all_data TO role_granted IN CURRENT DATABASE; -- success
 GRANT pg_read_all_data TO role_granted IN DATABASE db_3; -- error
 ERROR:  must have admin option on role "pg_read_all_data"
 GRANT pg_read_all_data TO role_granted IN DATABASE db_4; -- notice
-NOTICE:  role "role_granted" is already a member of role "pg_read_all_data" in database "db_4"
+NOTICE:  role "role_granted" has already been granted membership in role "pg_read_all_data" in database "db_4" by role "role_read_34"
 \connect postgres role_admin
 SELECT * FROM check_memberships();
            role           |          member          |         grantor          | admin_option |  datname  
