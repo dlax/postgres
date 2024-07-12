@@ -28,15 +28,15 @@ CREATE ROLE role_admin LOGIN CREATEROLE CREATEDB;
 GRANT pg_read_all_data TO role_admin WITH ADMIN OPTION;
 
 -- Populate test databases
-\connect template1
+SET ROLE role_admin;
+CREATE DATABASE db_0 OWNER role_admin;
+\connect db_0 role_admin
 CREATE TABLE data AS SELECT generate_series(1, 3);
-
-\connect template1 role_admin;
-
-CREATE DATABASE db_1;
-CREATE DATABASE db_2;
-CREATE DATABASE db_3;
-CREATE DATABASE db_4;
+\connect -
+CREATE DATABASE db_1 TEMPLATE db_0;
+CREATE DATABASE db_2 TEMPLATE db_1;
+CREATE DATABASE db_3 TEMPLATE db_1;
+CREATE DATABASE db_4 TEMPLATE db_1;
 
 -- Read all cluster-wide with admin option
 CREATE ROLE role_read_all_with_admin;
@@ -69,19 +69,19 @@ CREATE ROLE role_read_12_noinherit NOINHERIT;
 GRANT role_read_12 TO role_read_12_noinherit;
 
 -- Alternate syntax
-CREATE ROLE role_read_template1;
-GRANT pg_read_all_data TO role_read_template1, role_read_all_noinherit IN CURRENT DATABASE;
+CREATE ROLE role_read_0;
+GRANT pg_read_all_data TO role_read_0, role_read_all_noinherit IN CURRENT DATABASE;
 
 -- Failure due to missing database
-GRANT pg_read_all_data TO role_read_template1 IN DATABASE non_existent; -- error
+GRANT pg_read_all_data TO role_read_0 IN DATABASE non_existent; -- error
 
 -- Should warn on duplicate grants
 GRANT pg_read_all_data TO role_read_all_with_admin; -- notice
-GRANT pg_read_all_data TO role_read_template1 IN DATABASE template1; -- notice
+GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0; -- notice
 
 -- Should not warn if adjusting admin option
-GRANT pg_read_all_data TO role_read_template1 IN DATABASE template1 WITH ADMIN OPTION; -- silent
-GRANT pg_read_all_data TO role_read_template1 IN DATABASE template1 WITH ADMIN OPTION; -- notice
+GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0 WITH ADMIN OPTION; -- silent
+GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0 WITH ADMIN OPTION; -- notice
 
 -- Check membership table
 \connect postgres role_admin
@@ -242,13 +242,13 @@ SELECT * FROM data; -- error  (XXX *was* an error before rebase)
 \connect postgres role_admin
 
 -- Should not warn if revoking admin option
-REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_template1 IN DATABASE template1; -- silent
-REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_template1 IN DATABASE template1; -- silent
+REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- silent
+REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- silent
 SELECT * FROM check_memberships();
 
 -- Should warn if revoking a non-existent membership
-REVOKE pg_read_all_data FROM role_read_template1 IN DATABASE template1; -- success
-REVOKE pg_read_all_data FROM role_read_template1 IN DATABASE template1; -- warning
+REVOKE pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- success
+REVOKE pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- warning
 SELECT * FROM check_memberships();
 
 -- Revoke should only apply to the specified level
