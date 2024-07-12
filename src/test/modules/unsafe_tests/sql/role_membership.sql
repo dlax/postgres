@@ -3,7 +3,15 @@
 -- This is unsafe because roles and databases will added / removed / modified.
 --
 
-\connect postgres
+CREATE ROLE role_admin LOGIN CREATEROLE CREATEDB;
+GRANT pg_read_all_data TO role_admin WITH ADMIN OPTION;
+
+-- Populate test databases.
+CREATE DATABASE db_0 OWNER role_admin;
+\connect db_0 role_admin
+
+CREATE TABLE data AS SELECT generate_series(1, 3);
+
 CREATE FUNCTION check_memberships()
  RETURNS TABLE (role name, member name, grantor name, admin_option boolean, datname name)
  AS $$
@@ -24,15 +32,6 @@ ORDER BY
   1, 2, 5
 $$ LANGUAGE SQL;
 
-CREATE ROLE role_admin LOGIN CREATEROLE CREATEDB;
-GRANT pg_read_all_data TO role_admin WITH ADMIN OPTION;
-
--- Populate test databases
-SET ROLE role_admin;
-CREATE DATABASE db_0 OWNER role_admin;
-\connect db_0 role_admin
-CREATE TABLE data AS SELECT generate_series(1, 3);
-\connect -
 CREATE DATABASE db_1 TEMPLATE db_0;
 CREATE DATABASE db_2 TEMPLATE db_1;
 CREATE DATABASE db_3 TEMPLATE db_1;
@@ -84,7 +83,6 @@ GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0 WITH ADMIN OPTION; -- sil
 GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0 WITH ADMIN OPTION; -- notice
 
 -- Check membership table
-\connect postgres role_admin
 SELECT * FROM check_memberships();
 
 -- Test membership privileges (db_1)
@@ -239,7 +237,7 @@ SELECT * FROM data; -- error
 SET ROLE role_read_12; -- error
 SELECT * FROM data; -- error  (XXX *was* an error before rebase)
 
-\connect postgres role_admin
+\connect db_0 role_admin
 
 -- Should not warn if revoking admin option
 REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- silent
@@ -285,11 +283,10 @@ GRANT pg_read_all_data TO role_granted IN CURRENT DATABASE; -- success  (XXX une
 GRANT pg_read_all_data TO role_granted IN DATABASE db_3; -- error  (XXX *was* an error before rebase, now a NOTICE)
 GRANT pg_read_all_data TO role_granted IN DATABASE db_4; -- notice
 
-\connect postgres role_admin
+\connect db_0 role_admin
 SELECT * FROM check_memberships();
 
 -- Should clean up the membership table when dropping a database
-\connect postgres role_admin
 DROP DATABASE db_3;
 SELECT * FROM check_memberships();
 

@@ -2,7 +2,12 @@
 -- Tests for database-specific role memberships.
 -- This is unsafe because roles and databases will added / removed / modified.
 --
-\connect postgres
+CREATE ROLE role_admin LOGIN CREATEROLE CREATEDB;
+GRANT pg_read_all_data TO role_admin WITH ADMIN OPTION;
+-- Populate test databases.
+CREATE DATABASE db_0 OWNER role_admin;
+\connect db_0 role_admin
+CREATE TABLE data AS SELECT generate_series(1, 3);
 CREATE FUNCTION check_memberships()
  RETURNS TABLE (role name, member name, grantor name, admin_option boolean, datname name)
  AS $$
@@ -22,14 +27,6 @@ WHERE
 ORDER BY
   1, 2, 5
 $$ LANGUAGE SQL;
-CREATE ROLE role_admin LOGIN CREATEROLE CREATEDB;
-GRANT pg_read_all_data TO role_admin WITH ADMIN OPTION;
--- Populate test databases
-SET ROLE role_admin;
-CREATE DATABASE db_0 OWNER role_admin;
-\connect db_0 role_admin
-CREATE TABLE data AS SELECT generate_series(1, 3);
-\connect -
 CREATE DATABASE db_1 TEMPLATE db_0;
 CREATE DATABASE db_2 TEMPLATE db_1;
 CREATE DATABASE db_3 TEMPLATE db_1;
@@ -73,7 +70,6 @@ GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0 WITH ADMIN OPTION; -- sil
 GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0 WITH ADMIN OPTION; -- notice
 NOTICE:  role "role_read_0" has already been granted membership in role "pg_read_all_data" in database "db_0" by role "role_admin"
 -- Check membership table
-\connect postgres role_admin
 SELECT * FROM check_memberships();
            role           |          member          |  grantor   | admin_option | datname 
 --------------------------+--------------------------+------------+--------------+---------
@@ -385,8 +381,8 @@ SELECT * FROM data; -- error
 ERROR:  permission denied for table data
 \connect postgres role_admin
 -- Should not warn if revoking admin option
-REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_template1 IN DATABASE template1; -- silent
-REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_template1 IN DATABASE template1; -- silent
+REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- silent
+REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- silent
 SELECT * FROM check_memberships();
            role           |          member          |  grantor   | admin_option | datname 
 --------------------------+--------------------------+------------+--------------+---------
@@ -463,7 +459,6 @@ SELECT * FROM check_memberships();
  role_read_all_noinherit  | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
- role_read_template1      | role_admin               | superuser  | t            | 
 (18 rows)
 
 -- Ensure cluster-wide admin option can grant cluster-wide and in specific databases
