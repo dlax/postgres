@@ -92,11 +92,11 @@ SELECT * FROM data; -- success
 SET ROLE role_read_12;
 SELECT * FROM data; -- success
 SET ROLE role_read_34;
-SELECT * FROM data; -- error
+SELECT * FROM data; -- error  (XXX *was* an error before rebase)
 SET ROLE role_inherited_34;
-SELECT * FROM data; -- error
+SELECT * FROM data; -- error  (XXX *was* an error before rebase)
 SET ROLE role_inherited_3;
-SELECT * FROM data; -- error
+SELECT * FROM data; -- error  (XXX *was* an error before rebase)
 SET ROLE role_read_all_noinherit;
 SELECT * FROM data; -- error
 SET ROLE role_read_12_noinherit;
@@ -106,12 +106,12 @@ SET SESSION AUTHORIZATION role_read_12;
 SET ROLE pg_read_all_data; -- success
 
 SET SESSION AUTHORIZATION role_inherited_34;
-SET ROLE pg_read_all_data; -- error
+SET ROLE pg_read_all_data; -- error  (XXX *was* an error before rebase)
 SET ROLE role_read_34; -- success
 
 SET SESSION AUTHORIZATION role_inherited_3;
-SET ROLE pg_read_all_data; -- error
-SET ROLE role_read_34; -- error
+SET ROLE pg_read_all_data; -- error  (XXX *was* an error before rebase)
+SET ROLE role_read_34; -- error  (XXX *was* an error before rebase)
 
 SET SESSION AUTHORIZATION role_read_all_noinherit;
 SELECT * FROM data; -- error
@@ -130,11 +130,11 @@ SELECT * FROM data; -- success
 SET ROLE role_read_12;
 SELECT * FROM data; -- success
 SET ROLE role_read_34;
-SELECT * FROM data; -- error
+SELECT * FROM data; -- error (XXX *was* an error before rebase)
 SET ROLE role_inherited_34;
-SELECT * FROM data; -- error
+SELECT * FROM data; -- error (XXX *was* an error before rebase)
 SET ROLE role_inherited_3;
-SELECT * FROM data; -- error
+SELECT * FROM data; -- error (XXX *was* an error before rebase)
 SET ROLE role_read_all_noinherit;
 SELECT * FROM data; -- error
 SET ROLE role_read_12_noinherit;
@@ -144,12 +144,12 @@ SET SESSION AUTHORIZATION role_read_12;
 SET ROLE pg_read_all_data; -- success
 
 SET SESSION AUTHORIZATION role_inherited_34;
-SET ROLE pg_read_all_data; -- error
+SET ROLE pg_read_all_data; -- error  (XXX *was* and error before rebase)
 SET ROLE role_read_34; -- success
 
 SET SESSION AUTHORIZATION role_inherited_3;
-SET ROLE pg_read_all_data; -- error
-SET ROLE role_read_34; -- error
+SET ROLE pg_read_all_data; -- error  (XXX *was* and error before rebase)
+SET ROLE role_read_34; -- error  (XXX *was* and error before rebase)
 
 SET SESSION AUTHORIZATION role_read_all_noinherit;
 SELECT * FROM data; -- error
@@ -166,7 +166,7 @@ SELECT * FROM data; -- success
 SET ROLE role_read_all_with_admin;
 SELECT * FROM data; -- success
 SET ROLE role_read_12;
-SELECT * FROM data; -- error
+SELECT * FROM data; -- error  (XXX *was* an error before rebase)
 SET ROLE role_read_34;
 SELECT * FROM data; -- success
 SET ROLE role_inherited_34;
@@ -179,7 +179,7 @@ SET ROLE role_read_12_noinherit;
 SELECT * FROM data; -- error
 
 SET SESSION AUTHORIZATION role_read_12;
-SET ROLE pg_read_all_data; -- error
+SET ROLE pg_read_all_data; -- error  (XXX *was* an error before rebase)
 
 SET SESSION AUTHORIZATION role_inherited_34;
 SET ROLE pg_read_all_data; -- success
@@ -197,35 +197,35 @@ SELECT * FROM data; -- success
 SET SESSION AUTHORIZATION role_read_12_noinherit;
 SELECT * FROM data; -- error
 SET ROLE role_read_12; -- error
-SELECT * FROM data; -- error
+SELECT * FROM data; -- error  (XXX *was* an error before rebase)
 
 -- Test membership privileges (db_4)
 \connect db_4
 SET ROLE role_read_all_with_admin;
 SELECT * FROM data; -- success
 SET ROLE role_read_12;
-SELECT * FROM data; -- error
+SELECT * FROM data; -- error  (XXX *was* an error before rebase)
 SET ROLE role_read_34;
 SELECT * FROM data; -- success
 SET ROLE role_inherited_34;
 SELECT * FROM data; -- success
 SET ROLE role_inherited_3;
-SELECT * FROM data; -- error
+SELECT * FROM data; -- error  (XXX *was* an error before rebase)
 SET ROLE role_read_all_noinherit;
 SELECT * FROM data; -- error
 SET ROLE role_read_12_noinherit;
 SELECT * FROM data; -- error
 
 SET SESSION AUTHORIZATION role_read_12;
-SET ROLE pg_read_all_data; -- error
+SET ROLE pg_read_all_data; -- error  (XXX *was* an error before rebase)
 
 SET SESSION AUTHORIZATION role_inherited_34;
 SET ROLE pg_read_all_data; -- success
 SET ROLE role_read_34; -- success
 
 SET SESSION AUTHORIZATION role_inherited_3;
-SET ROLE pg_read_all_data; -- error
-SET ROLE role_read_34; -- error
+SET ROLE pg_read_all_data; -- error  (XXX *was* an error before rebase)
+SET ROLE role_read_34; -- error  (XXX *was* an error before rebase)
 
 SET SESSION AUTHORIZATION role_read_all_noinherit;
 SELECT * FROM data; -- error
@@ -235,7 +235,7 @@ SELECT * FROM data; -- success
 SET SESSION AUTHORIZATION role_read_12_noinherit;
 SELECT * FROM data; -- error
 SET ROLE role_read_12; -- error
-SELECT * FROM data; -- error
+SELECT * FROM data; -- error  (XXX *was* an error before rebase)
 
 \connect postgres role_admin
 
@@ -266,21 +266,21 @@ SELECT * FROM check_memberships();
 SET SESSION AUTHORIZATION role_read_34;
 GRANT pg_read_all_data TO role_granted; -- error
 GRANT pg_read_all_data TO role_granted IN CURRENT DATABASE; -- error
-GRANT pg_read_all_data TO role_granted IN DATABASE db_3; -- error
-GRANT pg_read_all_data TO role_granted IN DATABASE db_4; -- error
+GRANT pg_read_all_data TO role_granted IN DATABASE db_3; -- error  (XXX *was* an error before rebase)
+GRANT pg_read_all_data TO role_granted IN DATABASE db_4; -- error  (XXX *was* an error before rebase)
 
 \connect db_3
 SET SESSION AUTHORIZATION role_read_34;
 GRANT pg_read_all_data TO role_granted; -- error
-GRANT pg_read_all_data TO role_granted IN CURRENT DATABASE; -- success
+GRANT pg_read_all_data TO role_granted IN CURRENT DATABASE; -- success  (XXX unexpected NOTICE)
 GRANT pg_read_all_data TO role_granted IN DATABASE db_3; -- notice
-GRANT pg_read_all_data TO role_granted IN DATABASE db_4; -- error
+GRANT pg_read_all_data TO role_granted IN DATABASE db_4; -- error  (XXX *was* an error before rebase, now a NOTICE)
 
 \connect db_4
 SET SESSION AUTHORIZATION role_read_34;
 GRANT pg_read_all_data TO role_granted; -- error
-GRANT pg_read_all_data TO role_granted IN CURRENT DATABASE; -- success
-GRANT pg_read_all_data TO role_granted IN DATABASE db_3; -- error
+GRANT pg_read_all_data TO role_granted IN CURRENT DATABASE; -- success  (XXX unexpected NOTICE)
+GRANT pg_read_all_data TO role_granted IN DATABASE db_3; -- error  (XXX *was* an error before rebase, now a NOTICE)
 GRANT pg_read_all_data TO role_granted IN DATABASE db_4; -- notice
 
 \connect postgres role_admin
