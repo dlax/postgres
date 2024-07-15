@@ -41,33 +41,33 @@ CREATE DATABASE db_4 TEMPLATE db_1 OWNER role_admin;
 \connect db_0 role_admin
 
 -- Read all cluster-wide with admin option
-CREATE ROLE role_read_all_with_admin;
+CREATE ROLE role_read_all_with_admin ROLE role_admin;
 GRANT pg_read_all_data TO role_read_all_with_admin WITH ADMIN OPTION;
 
 -- Read all in databases 1 and 2
-CREATE ROLE role_read_12;
+CREATE ROLE role_read_12 ROLE role_admin;
 GRANT pg_read_all_data TO role_read_12 IN DATABASE db_1;
 GRANT pg_read_all_data TO role_read_12 IN DATABASE db_2;
 
 -- Read all in databases 3 and 4 with admin option
-CREATE ROLE role_read_34;
+CREATE ROLE role_read_34 ROLE role_admin;
 GRANT pg_read_all_data TO role_read_34 IN DATABASE db_3 WITH ADMIN OPTION;
 GRANT pg_read_all_data TO role_read_34 IN DATABASE db_4 WITH ADMIN OPTION;
 
 -- Inherits read all in databases 3 and 4
-CREATE ROLE role_inherited_34;
+CREATE ROLE role_inherited_34 ROLE role_admin;
 GRANT role_read_34 TO role_inherited_34;
 
 -- Inherits read all in database 3
-CREATE ROLE role_inherited_3;
+CREATE ROLE role_inherited_3 ROLE role_admin;
 GRANT role_read_34 TO role_inherited_3 IN DATABASE db_3;
 
 -- No inherit
-CREATE ROLE role_read_all_noinherit NOINHERIT;
+CREATE ROLE role_read_all_noinherit NOINHERIT ROLE role_admin;
 GRANT role_read_all_with_admin TO role_read_all_noinherit;
 
 -- No inherit in databases 1 and 2
-CREATE ROLE role_read_12_noinherit NOINHERIT;
+CREATE ROLE role_read_12_noinherit NOINHERIT ROLE role_admin;
 GRANT role_read_12 TO role_read_12_noinherit;
 
 -- Alternate syntax
