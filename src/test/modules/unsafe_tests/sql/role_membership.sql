@@ -8,8 +8,8 @@ GRANT pg_read_all_data TO role_admin WITH ADMIN OPTION;
 
 -- Populate test databases.
 CREATE DATABASE db_0 OWNER role_admin;
-\connect db_0 role_admin
 
+\connect db_0
 CREATE TABLE data AS SELECT generate_series(1, 3);
 
 CREATE FUNCTION check_memberships()
@@ -32,10 +32,13 @@ ORDER BY
   1, 2, 5
 $$ LANGUAGE SQL;
 
-CREATE DATABASE db_1 TEMPLATE db_0;
-CREATE DATABASE db_2 TEMPLATE db_1;
-CREATE DATABASE db_3 TEMPLATE db_1;
-CREATE DATABASE db_4 TEMPLATE db_1;
+\connect -
+CREATE DATABASE db_1 TEMPLATE db_0 OWNER role_admin;
+CREATE DATABASE db_2 TEMPLATE db_1 OWNER role_admin;
+CREATE DATABASE db_3 TEMPLATE db_1 OWNER role_admin;
+CREATE DATABASE db_4 TEMPLATE db_1 OWNER role_admin;
+
+\connect db_0 role_admin
 
 -- Read all cluster-wide with admin option
 CREATE ROLE role_read_all_with_admin;
