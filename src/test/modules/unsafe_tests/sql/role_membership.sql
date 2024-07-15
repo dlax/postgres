@@ -32,13 +32,12 @@ ORDER BY
   1, 2, 5
 $$ LANGUAGE SQL;
 
-\connect -
 CREATE DATABASE db_1 TEMPLATE db_0 OWNER role_admin;
 CREATE DATABASE db_2 TEMPLATE db_1 OWNER role_admin;
 CREATE DATABASE db_3 TEMPLATE db_1 OWNER role_admin;
 CREATE DATABASE db_4 TEMPLATE db_1 OWNER role_admin;
 
-\connect db_0 role_admin
+SET SESSION AUTHORIZATION role_admin;
 
 -- Read all cluster-wide with admin option
 CREATE ROLE role_read_all_with_admin ROLE role_admin;
@@ -90,6 +89,7 @@ SELECT * FROM check_memberships();
 
 -- Test membership privileges (db_1)
 \connect db_1
+SET SESSION AUTHORIZATION role_admin;
 SET ROLE role_read_all_with_admin;
 SELECT * FROM data; -- success
 SET ROLE role_read_12;
@@ -128,6 +128,7 @@ SELECT * FROM data; -- success
 
 -- Test membership privileges (db_2)
 \connect db_2
+SET SESSION AUTHORIZATION role_admin;
 SET ROLE role_read_all_with_admin;
 SELECT * FROM data; -- success
 SET ROLE role_read_12;
@@ -166,6 +167,7 @@ SELECT * FROM data; -- success
 
 -- Test membership privileges (db_3)
 \connect db_3
+SET SESSION AUTHORIZATION role_admin;
 SET ROLE role_read_all_with_admin;
 SELECT * FROM data; -- success
 SET ROLE role_read_12;
@@ -204,6 +206,7 @@ SELECT * FROM data; -- error  (XXX *was* an error before rebase)
 
 -- Test membership privileges (db_4)
 \connect db_4
+SET SESSION AUTHORIZATION role_admin;
 SET ROLE role_read_all_with_admin;
 SELECT * FROM data; -- success
 SET ROLE role_read_12;
@@ -240,7 +243,8 @@ SELECT * FROM data; -- error
 SET ROLE role_read_12; -- error
 SELECT * FROM data; -- error  (XXX *was* an error before rebase)
 
-\connect db_0 role_admin
+\connect db_0
+SET SESSION AUTHORIZATION role_admin;
 
 -- Should not warn if revoking admin option
 REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- silent
@@ -286,7 +290,8 @@ GRANT pg_read_all_data TO role_granted IN CURRENT DATABASE; -- success  (XXX une
 GRANT pg_read_all_data TO role_granted IN DATABASE db_3; -- error  (XXX *was* an error before rebase, now a NOTICE)
 GRANT pg_read_all_data TO role_granted IN DATABASE db_4; -- notice
 
-\connect db_0 role_admin
+\connect db_0
+SET SESSION AUTHORIZATION role_admin;
 SELECT * FROM check_memberships();
 
 -- Should clean up the membership table when dropping a database

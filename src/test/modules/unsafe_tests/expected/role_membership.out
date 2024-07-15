@@ -27,12 +27,11 @@ WHERE
 ORDER BY
   1, 2, 5
 $$ LANGUAGE SQL;
-\connect -
 CREATE DATABASE db_1 TEMPLATE db_0 OWNER role_admin;
 CREATE DATABASE db_2 TEMPLATE db_1 OWNER role_admin;
 CREATE DATABASE db_3 TEMPLATE db_1 OWNER role_admin;
 CREATE DATABASE db_4 TEMPLATE db_1 OWNER role_admin;
-\connect db_0 role_admin
+SET SESSION AUTHORIZATION role_admin;
 -- Read all cluster-wide with admin option
 CREATE ROLE role_read_all_with_admin ROLE role_admin;
 GRANT pg_read_all_data TO role_read_all_with_admin WITH ADMIN OPTION;
@@ -106,6 +105,7 @@ SELECT * FROM check_memberships();
 
 -- Test membership privileges (db_1)
 \connect db_1
+SET SESSION AUTHORIZATION role_admin;
 SET ROLE role_read_all_with_admin;
 SELECT * FROM data; -- success
  generate_series 
@@ -176,6 +176,7 @@ SELECT * FROM data; -- success
 
 -- Test membership privileges (db_2)
 \connect db_2
+SET SESSION AUTHORIZATION role_admin;
 SET ROLE role_read_all_with_admin;
 SELECT * FROM data; -- success
  generate_series 
@@ -246,6 +247,7 @@ SELECT * FROM data; -- success
 
 -- Test membership privileges (db_3)
 \connect db_3
+SET SESSION AUTHORIZATION role_admin;
 SET ROLE role_read_all_with_admin;
 SELECT * FROM data; -- success
  generate_series 
@@ -320,6 +322,7 @@ SELECT * FROM data; -- error
 ERROR:  permission denied for table data
 -- Test membership privileges (db_4)
 \connect db_4
+SET SESSION AUTHORIZATION role_admin;
 SET ROLE role_read_all_with_admin;
 SELECT * FROM data; -- success
  generate_series 
@@ -388,7 +391,8 @@ ERROR:  permission denied for table data
 SET ROLE role_read_12; -- error
 SELECT * FROM data; -- error
 ERROR:  permission denied for table data
-\connect postgres role_admin
+\connect db_0
+SET SESSION AUTHORIZATION role_admin;
 -- Should not warn if revoking admin option
 REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- silent
 REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- silent
@@ -539,7 +543,8 @@ GRANT pg_read_all_data TO role_granted IN DATABASE db_3; -- error
 ERROR:  must have admin option on role "pg_read_all_data"
 GRANT pg_read_all_data TO role_granted IN DATABASE db_4; -- notice
 NOTICE:  role "role_granted" has already been granted membership in role "pg_read_all_data" in database "db_4" by role "role_read_34"
-\connect postgres role_admin
+\connect db_0
+SET SESSION AUTHORIZATION role_admin;
 SELECT * FROM check_memberships();
            role           |          member          |  grantor   | admin_option | datname  
 --------------------------+--------------------------+------------+--------------+----------
@@ -571,7 +576,6 @@ SELECT * FROM check_memberships();
 (25 rows)
 
 -- Should clean up the membership table when dropping a database
-\connect postgres role_admin
 DROP DATABASE db_3;
 SELECT * FROM check_memberships();
            role           |          member          |  grantor   | admin_option | datname  
