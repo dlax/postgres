@@ -1394,7 +1394,8 @@ aclmask(const Acl *acl, Oid roleid, Oid ownerId,
 
 	/* Owner always implicitly has all grant options */
 	if ((mask & ACLITEM_ALL_GOPTION_BITS) &&
-		has_privs_of_role(roleid, ownerId))
+		has_privs_of_role(roleid, ownerId, MyDatabaseId))
+		/* XXX Is this correct? */
 	{
 		result = mask & ACLITEM_ALL_GOPTION_BITS;
 		if ((how == ACLMASK_ALL) ? (result == mask) : (result != 0))
@@ -1437,7 +1438,8 @@ aclmask(const Acl *acl, Oid roleid, Oid ownerId,
 			continue;			/* already checked it */
 
 		if ((aidata->ai_privs & remaining) &&
-			has_privs_of_role(roleid, aidata->ai_grantee))
+			has_privs_of_role(roleid, aidata->ai_grantee, MyDatabaseId))
+			/* XXX ^ Is this correct? */
 		{
 			result |= aidata->ai_privs & mask;
 			if ((how == ACLMASK_ALL) ? (result == mask) : (result != 0))
@@ -4871,7 +4873,7 @@ pg_role_aclcheck(Oid role_oid, Oid roleid, AclMode mode)
 	}
 	if (mode & ACL_USAGE)
 	{
-		if (has_privs_of_role(roleid, role_oid))
+		if (has_privs_of_role(roleid, role_oid, MyDatabaseId))
 			return ACLCHECK_OK;
 	}
 	if (mode & ACL_SET)
@@ -5147,39 +5149,31 @@ roles_is_member_of(Oid roleid, enum RoleRecurseType type,
 
 
 /*
- * Does member have the privileges of role (directly or indirectly)?
+ * Does member have the privileges of role (directly or indirectly) in
+ * specified database or cluster-wise?
  *
  * This is defined not to recurse through grants that are not inherited,
  * and only inherited grants confer the associated privileges automatically.
  *
  * See also member_can_set_role, below.
- */
-bool
-has_privs_of_role(Oid member, Oid role)
-{
-	/* Fast path for simple case */
-	if (member == role)
-		return true;
-
-	/* Superusers have every privilege, so are part of every role */
-	if (superuser_arg(member))
-		return true;
-
-	/*
-	 * Find all the roles that member has the privileges of, including
-	 * multi-level recursion, then see if target role is any one of them.
-	 */
-	return list_member_oid(roles_is_member_of(member, ROLERECURSE_PRIVS,
-											  InvalidOid, NULL, InvalidOid),
-						   role);
-}
-
-/*
- * Does member have the privileges of role in database (directly or indirectly)?
+ *
+ * TODO: instead of passing InvalidOid for the 'database' argument when checking for cluster-wise privileges, use a dedicated struct, e.g.:
+ *   typedef struct Membership  // not sure about the name?
+ *   {
+ *      Oid role;
+ *      Oid database;
+ *   }
+ * with some constructors:
+ *   Membership cluster_membership(Oid role);
+ *   Membership database_membership(Oid role, Oid database);
+ *
+ * Still, in some cases, has_privs_of_role() is called with 'role' being the
+ * "owner", which only makes sense in a cluster context, so maybe we need a
+ * dedicated function after all...
  *
  */
 bool
-has_privs_of_role_in_db(Oid member, Oid role, Oid database)
+has_privs_of_role(Oid member, Oid role, Oid database)
 {
 	/* Fast path for simple case */
 	if (member == role)
@@ -5196,6 +5190,17 @@ has_privs_of_role_in_db(Oid member, Oid role, Oid database)
 	return list_member_oid(roles_is_member_of(member, ROLERECURSE_PRIVS,
 											  InvalidOid, NULL, database),
 						   role);
+}
+
+
+/*
+ * Does member have the privileges of role *cluster-wide*?
+ *
+ */
+bool
+has_cluster_privs_of_role(Oid member, Oid role)
+{
+	return has_privs_of_role(member, role, InvalidOid);
 }
 
 /*

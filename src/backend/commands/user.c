@@ -1600,7 +1600,7 @@ DropOwnedObjects(DropOwnedStmt *stmt)
 	{
 		Oid			roleid = lfirst_oid(cell);
 
-		if (!has_privs_of_role(GetUserId(), roleid))
+		if (!has_privs_of_role(GetUserId(), roleid, MyDatabaseId))
 			ereport(ERROR,
 					(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 					 errmsg("permission denied to drop objects"),
@@ -1629,7 +1629,7 @@ ReassignOwnedObjects(ReassignOwnedStmt *stmt)
 	{
 		Oid			roleid = lfirst_oid(cell);
 
-		if (!has_privs_of_role(GetUserId(), roleid))
+		if (!has_privs_of_role(GetUserId(), roleid, MyDatabaseId))
 			ereport(ERROR,
 					(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 					 errmsg("permission denied to reassign objects"),
@@ -1640,7 +1640,7 @@ ReassignOwnedObjects(ReassignOwnedStmt *stmt)
 	/* Must have privileges on the receiving side too */
 	newrole = get_rolespec_oid(stmt->newrole, false);
 
-	if (!has_privs_of_role(GetUserId(), newrole))
+	if (!has_privs_of_role(GetUserId(), newrole, MyDatabaseId))
 		ereport(ERROR,
 				(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 				 errmsg("permission denied to reassign objects"),
@@ -2266,7 +2266,7 @@ check_role_grantor(Oid currentUserId, Oid roleid, Oid grantorId, bool is_grant, 
 	 */
 	if (is_grant)
 	{
-		if (!has_privs_of_role_in_db(currentUserId, grantorId, db_id))
+		if (!has_privs_of_role(currentUserId, grantorId, db_id))
 			ereport(ERROR,
 					(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 					 errmsg("permission denied to grant privileges as role \"%s\"",
@@ -2285,7 +2285,7 @@ check_role_grantor(Oid currentUserId, Oid roleid, Oid grantorId, bool is_grant, 
 	}
 	else
 	{
-		if (!has_privs_of_role_in_db(currentUserId, grantorId, db_id))
+		if (!has_privs_of_role(currentUserId, grantorId, db_id))
 			ereport(ERROR,
 					(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 					 errmsg("permission denied to revoke privileges granted by role \"%s\"",
