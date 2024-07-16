@@ -5233,7 +5233,7 @@ member_can_set_role(Oid member, Oid role)
 	 * multi-level recursion, then see if target role is any one of them.
 	 */
 	return list_member_oid(roles_is_member_of(member, ROLERECURSE_SETROLE,
-											  InvalidOid, NULL, InvalidOid),
+											  InvalidOid, NULL, MyDatabaseId),
 						   role);
 }
 
