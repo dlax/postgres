@@ -295,10 +295,28 @@ SET SESSION AUTHORIZATION role_admin;
 SELECT * FROM check_memberships();
 
 -- Should clean up the membership table when dropping a database
+DROP DATABASE db_4;
 DROP DATABASE db_3;
+DROP DATABASE db_2;
+DROP DATABASE db_1;
 SELECT * FROM check_memberships();
 
 -- Should clean up the membership table when dropping a role
 DROP ROLE role_granted;  -- dependency of 'role_read_34'
 DROP ROLE role_read_34;
+DROP ROLE role_inherited_3;
+DROP ROLE role_inherited_34;
+DROP ROLE role_read_0;
+DROP ROLE role_read_12;
+DROP ROLE role_read_12_noinherit;
+DROP ROLE role_read_all_noinherit;
+DROP ROLE role_read_all_with_admin;
+
+RESET SESSION AUTHORIZATION;
+DROP OWNED BY role_admin CASCADE;
 SELECT * FROM check_memberships();
+\connect template1
+DROP DATABASE db_0;
+DROP ROLE role_admin;
+SELECT datname FROM pg_database WHERE datname LIKE 'db_%';
+SELECT rolname FROM pg_roles WHERE rolname LIKE 'role_%';

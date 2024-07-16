@@ -613,17 +613,16 @@ SELECT * FROM check_memberships();
 (31 rows)
 
 -- Should clean up the membership table when dropping a database
+DROP DATABASE db_4;
 DROP DATABASE db_3;
+DROP DATABASE db_2;
+DROP DATABASE db_1;
 SELECT * FROM check_memberships();
            role           |          member          |         grantor          | admin_option | datname 
 --------------------------+--------------------------+--------------------------+--------------+---------
  pg_read_all_data         | role_admin               | superuser                | t            | 
  pg_read_all_data         | role_granted             | role_read_all_with_admin | f            | db_0
- pg_read_all_data         | role_granted             | role_read_all_with_admin | f            | db_1
- pg_read_all_data         | role_granted             | role_read_34             | f            | db_4
  pg_read_all_data         | role_granted             | role_read_all_with_admin | f            | 
- pg_read_all_data         | role_read_12             | role_admin               | f            | db_2
- pg_read_all_data         | role_read_34             | role_admin               | t            | db_4
  pg_read_all_data         | role_read_all_noinherit  | role_admin               | f            | db_0
  pg_read_all_data         | role_read_all_with_admin | role_admin               | t            | 
  role_granted             | role_admin               | superuser                | t            | 
@@ -635,42 +634,46 @@ SELECT * FROM check_memberships();
  role_read_12             | role_admin               | superuser                | t            | 
  role_read_12             | role_admin               | role_admin               | f            | 
  role_read_12             | role_read_12_noinherit   | role_admin               | f            | 
- role_read_12_noinherit   | role_admin               | role_admin               | f            | 
  role_read_12_noinherit   | role_admin               | superuser                | t            | 
- role_read_34             | role_admin               | role_admin               | f            | 
+ role_read_12_noinherit   | role_admin               | role_admin               | f            | 
  role_read_34             | role_admin               | superuser                | t            | 
+ role_read_34             | role_admin               | role_admin               | f            | 
  role_read_34             | role_inherited_34        | role_admin               | f            | 
  role_read_all_noinherit  | role_admin               | superuser                | t            | 
  role_read_all_noinherit  | role_admin               | role_admin               | f            | 
- role_read_all_with_admin | role_admin               | role_admin               | f            | 
  role_read_all_with_admin | role_admin               | superuser                | t            | 
+ role_read_all_with_admin | role_admin               | role_admin               | f            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin               | f            | 
-(28 rows)
+(24 rows)
 
 -- Should clean up the membership table when dropping a role
 DROP ROLE role_granted;  -- dependency of 'role_read_34'
 DROP ROLE role_read_34;
+DROP ROLE role_inherited_3;
+DROP ROLE role_inherited_34;
+DROP ROLE role_read_0;
+DROP ROLE role_read_12;
+DROP ROLE role_read_12_noinherit;
+DROP ROLE role_read_all_noinherit;
+DROP ROLE role_read_all_with_admin;
+RESET SESSION AUTHORIZATION;
+DROP OWNED BY role_admin CASCADE;
 SELECT * FROM check_memberships();
-           role           |          member          |  grantor   | admin_option | datname 
---------------------------+--------------------------+------------+--------------+---------
- pg_read_all_data         | role_admin               | superuser  | t            | 
- pg_read_all_data         | role_read_12             | role_admin | f            | db_2
- pg_read_all_data         | role_read_all_noinherit  | role_admin | f            | db_0
- pg_read_all_data         | role_read_all_with_admin | role_admin | t            | 
- role_inherited_3         | role_admin               | role_admin | f            | 
- role_inherited_3         | role_admin               | superuser  | t            | 
- role_inherited_34        | role_admin               | role_admin | f            | 
- role_inherited_34        | role_admin               | superuser  | t            | 
- role_read_0              | role_admin               | superuser  | t            | 
- role_read_12             | role_admin               | role_admin | f            | 
- role_read_12             | role_admin               | superuser  | t            | 
- role_read_12             | role_read_12_noinherit   | role_admin | f            | 
- role_read_12_noinherit   | role_admin               | superuser  | t            | 
- role_read_12_noinherit   | role_admin               | role_admin | f            | 
- role_read_all_noinherit  | role_admin               | superuser  | t            | 
- role_read_all_noinherit  | role_admin               | role_admin | f            | 
- role_read_all_with_admin | role_admin               | role_admin | f            | 
- role_read_all_with_admin | role_admin               | superuser  | t            | 
- role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
-(19 rows)
+       role       |   member   |  grantor  | admin_option | datname 
+------------------+------------+-----------+--------------+---------
+ pg_read_all_data | role_admin | superuser | t            | 
+(1 row)
+
+\connect template1
+DROP DATABASE db_0;
+DROP ROLE role_admin;
+SELECT datname FROM pg_database WHERE datname LIKE 'db_%';
+ datname 
+---------
+(0 rows)
+
+SELECT rolname FROM pg_roles WHERE rolname LIKE 'role_%';
+ rolname 
+---------
+(0 rows)
 
