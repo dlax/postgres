@@ -82,22 +82,22 @@ SELECT * FROM check_memberships();
  pg_read_all_data         | role_read_34             | role_admin | t            | db_4
  pg_read_all_data         | role_read_all_noinherit  | role_admin | f            | db_0
  pg_read_all_data         | role_read_all_with_admin | role_admin | t            | 
- role_inherited_3         | role_admin               | superuser  | t            | 
  role_inherited_3         | role_admin               | role_admin | f            | 
+ role_inherited_3         | role_admin               | superuser  | t            | 
  role_inherited_34        | role_admin               | role_admin | f            | 
  role_inherited_34        | role_admin               | superuser  | t            | 
  role_read_0              | role_admin               | superuser  | t            | 
- role_read_12             | role_admin               | role_admin | f            | 
  role_read_12             | role_admin               | superuser  | t            | 
+ role_read_12             | role_admin               | role_admin | f            | 
  role_read_12             | role_read_12_noinherit   | role_admin | f            | 
- role_read_12_noinherit   | role_admin               | role_admin | f            | 
  role_read_12_noinherit   | role_admin               | superuser  | t            | 
+ role_read_12_noinherit   | role_admin               | role_admin | f            | 
  role_read_34             | role_admin               | superuser  | t            | 
  role_read_34             | role_admin               | role_admin | f            | 
  role_read_34             | role_inherited_3         | role_admin | f            | db_3
  role_read_34             | role_inherited_34        | role_admin | f            | 
- role_read_all_noinherit  | role_admin               | role_admin | f            | 
  role_read_all_noinherit  | role_admin               | superuser  | t            | 
+ role_read_all_noinherit  | role_admin               | role_admin | f            | 
  role_read_all_with_admin | role_admin               | role_admin | f            | 
  role_read_all_with_admin | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
