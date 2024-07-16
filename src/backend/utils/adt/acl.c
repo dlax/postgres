@@ -5074,7 +5074,7 @@ roles_is_member_of(Oid roleid, enum RoleRecurseType type,
 	 * ROLE_PG_READ_ALL_SETTINGS for a physical walsender SHOW command.  In
 	 * that case, no role gets pg_database_owner.
 	 */
-	if (!OidIsValid(MyDatabaseId))
+	if (!OidIsValid(MyDatabaseId))	/* XXX or databaseId? */
 		dba = InvalidOid;
 	else
 	{
