@@ -4987,10 +4987,16 @@ roles_list_append(List *roles_list, bloom_filter **bf, Oid role)
 static void
 append_role_memberships(List *roles_list, enum RoleRecurseType type,
 						Oid admin_of, Oid *admin_role, Oid memberid,
-						Oid targetDatabaseId, Oid databaseId, bloom_filter *bf)
+						Oid databaseId, bloom_filter *bf)
 {
 	CatCList   *memlist;
 	int			i;
+	Oid			targetDatabaseId;
+
+	if (!OidIsValid(databaseId))
+		targetDatabaseId = InvalidOid;
+	else
+		targetDatabaseId = MyDatabaseId;
 
 	memlist = SearchSysCacheList2(AUTHMEMMEMDBROLE,
 								  ObjectIdGetDatum(memberid),
@@ -5106,14 +5112,14 @@ roles_is_member_of(Oid roleid, enum RoleRecurseType type,
 
 		/* Find roles that memberid is directly a member of */
 		append_role_memberships(roles_list, type, admin_of, admin_role,
-								memberid, InvalidOid, InvalidOid, bf);
+								memberid, InvalidOid, bf);
 
 		/*
 		 * Find roles that memberid is directly a member of in the current
 		 * database
 		 */
 		append_role_memberships(roles_list, type, admin_of, admin_role,
-								memberid, MyDatabaseId, databaseId, bf);
+								memberid, databaseId, bf);
 
 		/* implement pg_database_owner implicit membership */
 		if (memberid == dba && OidIsValid(dba))
