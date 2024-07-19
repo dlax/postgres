@@ -299,5 +299,6 @@ DROP DATABASE db_3;
 SELECT * FROM check_memberships();
 
 -- Should clean up the membership table when dropping a role
+DROP ROLE role_granted;  -- dependency of 'role_read_34'
 DROP ROLE role_read_34;
 SELECT * FROM check_memberships();
