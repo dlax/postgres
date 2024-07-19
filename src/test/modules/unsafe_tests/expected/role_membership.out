@@ -8,9 +8,8 @@ GRANT pg_read_all_data TO role_admin WITH ADMIN OPTION;
 CREATE DATABASE db_0 OWNER role_admin;
 \connect db_0
 CREATE TABLE data AS SELECT generate_series(1, 3);
-CREATE FUNCTION check_memberships()
- RETURNS TABLE (role name, member name, grantor name, admin_option boolean, datname name)
- AS $$
+CREATE VIEW role_memberships
+ AS
 SELECT
   r.rolname as role,
   m.rolname as member,
@@ -26,7 +25,7 @@ WHERE
   m.rolname LIKE 'role_%'
 ORDER BY
   1, 2, 5
-$$ LANGUAGE SQL;
+;
 CREATE DATABASE db_1 TEMPLATE db_0 OWNER role_admin;
 CREATE DATABASE db_2 TEMPLATE db_1 OWNER role_admin;
 CREATE DATABASE db_3 TEMPLATE db_1 OWNER role_admin;
@@ -71,7 +70,7 @@ GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0 WITH ADMIN OPTION; -- sil
 GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0 WITH ADMIN OPTION; -- notice
 NOTICE:  role "role_read_0" has already been granted membership in role "pg_read_all_data" in database "db_0" by role "role_admin"
 -- Check membership table
-SELECT * FROM check_memberships();
+TABLE role_memberships;
            role           |          member          |  grantor   | admin_option | datname 
 --------------------------+--------------------------+------------+--------------+---------
  pg_read_all_data         | role_admin               | superuser  | t            | 
@@ -396,7 +395,7 @@ SET SESSION AUTHORIZATION role_admin;
 -- Should not warn if revoking admin option
 REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- silent
 REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- silent
-SELECT * FROM check_memberships();
+TABLE role_memberships;
            role           |          member          |  grantor   | admin_option | datname 
 --------------------------+--------------------------+------------+--------------+---------
  pg_read_all_data         | role_admin               | superuser  | t            | 
@@ -432,7 +431,7 @@ SELECT * FROM check_memberships();
 REVOKE pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- success
 REVOKE pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- warning
 WARNING:  role "role_read_0" has not been granted membership in role "pg_read_all_data" by role "role_admin"
-SELECT * FROM check_memberships();
+TABLE role_memberships;
            role           |          member          |  grantor   | admin_option | datname 
 --------------------------+--------------------------+------------+--------------+---------
  pg_read_all_data         | role_admin               | superuser  | t            | 
@@ -465,7 +464,7 @@ SELECT * FROM check_memberships();
 
 -- Revoke should only apply to the specified level
 REVOKE pg_read_all_data FROM role_read_12; -- warning
-SELECT * FROM check_memberships();
+TABLE role_memberships;
            role           |          member          |  grantor   | admin_option | datname 
 --------------------------+--------------------------+------------+--------------+---------
  pg_read_all_data         | role_admin               | superuser  | t            | 
@@ -504,7 +503,7 @@ GRANT pg_read_all_data TO role_granted IN DATABASE db_1; -- success
 GRANT role_read_34 TO role_granted; -- error
 ERROR:  permission denied to grant role "role_read_34"
 DETAIL:  Only roles with the ADMIN option on role "role_read_34" may grant this role.
-SELECT * FROM check_memberships();
+TABLE role_memberships;
            role           |          member          |         grantor          | admin_option | datname 
 --------------------------+--------------------------+--------------------------+--------------+---------
  pg_read_all_data         | role_admin               | superuser                | t            | 
@@ -576,7 +575,7 @@ GRANT pg_read_all_data TO role_granted IN DATABASE db_4; -- notice
 NOTICE:  role "role_granted" has already been granted membership in role "pg_read_all_data" in database "db_4" by role "role_read_34"
 \connect db_0
 SET SESSION AUTHORIZATION role_admin;
-SELECT * FROM check_memberships();
+TABLE role_memberships;
            role           |          member          |         grantor          | admin_option | datname 
 --------------------------+--------------------------+--------------------------+--------------+---------
  pg_read_all_data         | role_admin               | superuser                | t            | 
@@ -617,7 +616,7 @@ DROP DATABASE db_4;
 DROP DATABASE db_3;
 DROP DATABASE db_2;
 DROP DATABASE db_1;
-SELECT * FROM check_memberships();
+TABLE role_memberships;
            role           |          member          |         grantor          | admin_option | datname 
 --------------------------+--------------------------+--------------------------+--------------+---------
  pg_read_all_data         | role_admin               | superuser                | t            | 
@@ -658,7 +657,7 @@ DROP ROLE role_read_all_noinherit;
 DROP ROLE role_read_all_with_admin;
 RESET SESSION AUTHORIZATION;
 DROP OWNED BY role_admin CASCADE;
-SELECT * FROM check_memberships();
+TABLE role_memberships;
        role       |   member   |  grantor  | admin_option | datname 
 ------------------+------------+-----------+--------------+---------
  pg_read_all_data | role_admin | superuser | t            | 

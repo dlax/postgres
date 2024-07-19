@@ -12,9 +12,8 @@ CREATE DATABASE db_0 OWNER role_admin;
 \connect db_0
 CREATE TABLE data AS SELECT generate_series(1, 3);
 
-CREATE FUNCTION check_memberships()
- RETURNS TABLE (role name, member name, grantor name, admin_option boolean, datname name)
- AS $$
+CREATE VIEW role_memberships
+ AS
 SELECT
   r.rolname as role,
   m.rolname as member,
@@ -30,7 +29,7 @@ WHERE
   m.rolname LIKE 'role_%'
 ORDER BY
   1, 2, 5
-$$ LANGUAGE SQL;
+;
 
 CREATE DATABASE db_1 TEMPLATE db_0 OWNER role_admin;
 CREATE DATABASE db_2 TEMPLATE db_1 OWNER role_admin;
@@ -85,7 +84,7 @@ GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0 WITH ADMIN OPTION; -- sil
 GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0 WITH ADMIN OPTION; -- notice
 
 -- Check membership table
-SELECT * FROM check_memberships();
+TABLE role_memberships;
 
 -- Test membership privileges (db_1)
 \connect db_1
@@ -249,16 +248,16 @@ SET SESSION AUTHORIZATION role_admin;
 -- Should not warn if revoking admin option
 REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- silent
 REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- silent
-SELECT * FROM check_memberships();
+TABLE role_memberships;
 
 -- Should warn if revoking a non-existent membership
 REVOKE pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- success
 REVOKE pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- warning
-SELECT * FROM check_memberships();
+TABLE role_memberships;
 
 -- Revoke should only apply to the specified level
 REVOKE pg_read_all_data FROM role_read_12; -- warning
-SELECT * FROM check_memberships();
+TABLE role_memberships;
 
 -- Ensure cluster-wide admin option can grant cluster-wide and in specific databases
 CREATE ROLE role_granted;
@@ -267,7 +266,7 @@ GRANT pg_read_all_data TO role_granted; -- success
 GRANT pg_read_all_data TO role_granted IN CURRENT DATABASE; -- success
 GRANT pg_read_all_data TO role_granted IN DATABASE db_1; -- success
 GRANT role_read_34 TO role_granted; -- error
-SELECT * FROM check_memberships();
+TABLE role_memberships;
 
 -- Ensure database-specific admin option can only grant within that database
 SET SESSION AUTHORIZATION role_read_34;
@@ -292,14 +291,14 @@ GRANT pg_read_all_data TO role_granted IN DATABASE db_4; -- notice
 
 \connect db_0
 SET SESSION AUTHORIZATION role_admin;
-SELECT * FROM check_memberships();
+TABLE role_memberships;
 
 -- Should clean up the membership table when dropping a database
 DROP DATABASE db_4;
 DROP DATABASE db_3;
 DROP DATABASE db_2;
 DROP DATABASE db_1;
-SELECT * FROM check_memberships();
+TABLE role_memberships;
 
 -- Should clean up the membership table when dropping a role
 DROP ROLE role_granted;  -- dependency of 'role_read_34'
@@ -314,7 +313,7 @@ DROP ROLE role_read_all_with_admin;
 
 RESET SESSION AUTHORIZATION;
 DROP OWNED BY role_admin CASCADE;
-SELECT * FROM check_memberships();
+TABLE role_memberships;
 \connect template1
 DROP DATABASE db_0;
 DROP ROLE role_admin;
