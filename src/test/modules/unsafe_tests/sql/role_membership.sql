@@ -29,7 +29,7 @@ LEFT JOIN pg_database d ON d.oid = a.dbid
 WHERE
   m.rolname LIKE 'role_%'
 ORDER BY
-  1, 2, 5
+  1, 2, 5, 3
 ;
 
 CREATE DATABASE db_1 TEMPLATE db_0 OWNER role_admin;

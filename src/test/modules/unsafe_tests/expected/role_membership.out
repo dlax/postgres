@@ -25,7 +25,7 @@ LEFT JOIN pg_database d ON d.oid = a.dbid
 WHERE
   m.rolname LIKE 'role_%'
 ORDER BY
-  1, 2, 5
+  1, 2, 5, 3
 ;
 CREATE DATABASE db_1 TEMPLATE db_0 OWNER role_admin;
 CREATE DATABASE db_2 TEMPLATE db_1 OWNER role_admin;
@@ -88,20 +88,20 @@ TABLE role_memberships;
  pg_read_all_stats        | role_read_0              | role_admin | f            | 
  role_inherited_3         | role_admin               | role_admin | f            | 
  role_inherited_3         | role_admin               | superuser  | t            | 
- role_inherited_34        | role_admin               | superuser  | t            | 
  role_inherited_34        | role_admin               | role_admin | f            | 
+ role_inherited_34        | role_admin               | superuser  | t            | 
  role_read_0              | role_admin               | superuser  | t            | 
- role_read_12             | role_admin               | superuser  | t            | 
  role_read_12             | role_admin               | role_admin | f            | 
+ role_read_12             | role_admin               | superuser  | t            | 
  role_read_12             | role_read_12_noinherit   | role_admin | f            | 
- role_read_12_noinherit   | role_admin               | superuser  | t            | 
  role_read_12_noinherit   | role_admin               | role_admin | f            | 
- role_read_34             | role_admin               | superuser  | t            | 
+ role_read_12_noinherit   | role_admin               | superuser  | t            | 
  role_read_34             | role_admin               | role_admin | f            | 
+ role_read_34             | role_admin               | superuser  | t            | 
  role_read_34             | role_inherited_3         | role_admin | f            | db_3
  role_read_34             | role_inherited_34        | role_admin | f            | 
- role_read_all_noinherit  | role_admin               | superuser  | t            | 
  role_read_all_noinherit  | role_admin               | role_admin | f            | 
+ role_read_all_noinherit  | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_admin               | role_admin | f            | 
  role_read_all_with_admin | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
@@ -435,20 +435,20 @@ TABLE role_memberships;
  pg_read_all_stats        | role_read_0              | role_admin | f            | 
  role_inherited_3         | role_admin               | role_admin | f            | 
  role_inherited_3         | role_admin               | superuser  | t            | 
- role_inherited_34        | role_admin               | superuser  | t            | 
  role_inherited_34        | role_admin               | role_admin | f            | 
+ role_inherited_34        | role_admin               | superuser  | t            | 
  role_read_0              | role_admin               | superuser  | t            | 
- role_read_12             | role_admin               | superuser  | t            | 
  role_read_12             | role_admin               | role_admin | f            | 
+ role_read_12             | role_admin               | superuser  | t            | 
  role_read_12             | role_read_12_noinherit   | role_admin | f            | 
- role_read_12_noinherit   | role_admin               | superuser  | t            | 
  role_read_12_noinherit   | role_admin               | role_admin | f            | 
- role_read_34             | role_admin               | superuser  | t            | 
+ role_read_12_noinherit   | role_admin               | superuser  | t            | 
  role_read_34             | role_admin               | role_admin | f            | 
+ role_read_34             | role_admin               | superuser  | t            | 
  role_read_34             | role_inherited_3         | role_admin | f            | db_3
  role_read_34             | role_inherited_34        | role_admin | f            | 
- role_read_all_noinherit  | role_admin               | superuser  | t            | 
  role_read_all_noinherit  | role_admin               | role_admin | f            | 
+ role_read_all_noinherit  | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_admin               | role_admin | f            | 
  role_read_all_with_admin | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
@@ -472,20 +472,20 @@ TABLE role_memberships;
  pg_read_all_stats        | role_read_0              | role_admin | f            | 
  role_inherited_3         | role_admin               | role_admin | f            | 
  role_inherited_3         | role_admin               | superuser  | t            | 
- role_inherited_34        | role_admin               | superuser  | t            | 
  role_inherited_34        | role_admin               | role_admin | f            | 
+ role_inherited_34        | role_admin               | superuser  | t            | 
  role_read_0              | role_admin               | superuser  | t            | 
- role_read_12             | role_admin               | superuser  | t            | 
  role_read_12             | role_admin               | role_admin | f            | 
+ role_read_12             | role_admin               | superuser  | t            | 
  role_read_12             | role_read_12_noinherit   | role_admin | f            | 
- role_read_12_noinherit   | role_admin               | superuser  | t            | 
  role_read_12_noinherit   | role_admin               | role_admin | f            | 
- role_read_34             | role_admin               | superuser  | t            | 
+ role_read_12_noinherit   | role_admin               | superuser  | t            | 
  role_read_34             | role_admin               | role_admin | f            | 
+ role_read_34             | role_admin               | superuser  | t            | 
  role_read_34             | role_inherited_3         | role_admin | f            | db_3
  role_read_34             | role_inherited_34        | role_admin | f            | 
- role_read_all_noinherit  | role_admin               | superuser  | t            | 
  role_read_all_noinherit  | role_admin               | role_admin | f            | 
+ role_read_all_noinherit  | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_admin               | role_admin | f            | 
  role_read_all_with_admin | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
@@ -509,17 +509,17 @@ TABLE role_memberships;
  role_inherited_34        | role_admin               | role_admin | f            | 
  role_inherited_34        | role_admin               | superuser  | t            | 
  role_read_0              | role_admin               | superuser  | t            | 
- role_read_12             | role_admin               | superuser  | t            | 
  role_read_12             | role_admin               | role_admin | f            | 
+ role_read_12             | role_admin               | superuser  | t            | 
  role_read_12             | role_read_12_noinherit   | role_admin | f            | 
- role_read_12_noinherit   | role_admin               | superuser  | t            | 
  role_read_12_noinherit   | role_admin               | role_admin | f            | 
- role_read_34             | role_admin               | superuser  | t            | 
+ role_read_12_noinherit   | role_admin               | superuser  | t            | 
  role_read_34             | role_admin               | role_admin | f            | 
+ role_read_34             | role_admin               | superuser  | t            | 
  role_read_34             | role_inherited_3         | role_admin | f            | db_3
  role_read_34             | role_inherited_34        | role_admin | f            | 
- role_read_all_noinherit  | role_admin               | superuser  | t            | 
  role_read_all_noinherit  | role_admin               | role_admin | f            | 
+ role_read_all_noinherit  | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_admin               | role_admin | f            | 
  role_read_all_with_admin | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
@@ -551,20 +551,20 @@ TABLE role_memberships;
  role_granted             | role_admin               | superuser                | t            | 
  role_inherited_3         | role_admin               | role_admin               | f            | 
  role_inherited_3         | role_admin               | superuser                | t            | 
- role_inherited_34        | role_admin               | superuser                | t            | 
  role_inherited_34        | role_admin               | role_admin               | f            | 
+ role_inherited_34        | role_admin               | superuser                | t            | 
  role_read_0              | role_admin               | superuser                | t            | 
- role_read_12             | role_admin               | superuser                | t            | 
  role_read_12             | role_admin               | role_admin               | f            | 
+ role_read_12             | role_admin               | superuser                | t            | 
  role_read_12             | role_read_12_noinherit   | role_admin               | f            | 
- role_read_12_noinherit   | role_admin               | superuser                | t            | 
  role_read_12_noinherit   | role_admin               | role_admin               | f            | 
+ role_read_12_noinherit   | role_admin               | superuser                | t            | 
  role_read_34             | role_admin               | role_admin               | f            | 
  role_read_34             | role_admin               | superuser                | t            | 
  role_read_34             | role_inherited_3         | role_admin               | f            | db_3
  role_read_34             | role_inherited_34        | role_admin               | f            | 
- role_read_all_noinherit  | role_admin               | superuser                | t            | 
  role_read_all_noinherit  | role_admin               | role_admin               | f            | 
+ role_read_all_noinherit  | role_admin               | superuser                | t            | 
  role_read_all_with_admin | role_admin               | role_admin               | f            | 
  role_read_all_with_admin | role_admin               | superuser                | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin               | f            | 
@@ -625,24 +625,24 @@ TABLE role_memberships;
  pg_read_all_stats        | role_admin               | superuser                | t            | 
  pg_read_all_stats        | role_read_0              | role_admin               | f            | 
  role_granted             | role_admin               | superuser                | t            | 
- role_inherited_3         | role_admin               | superuser                | t            | 
  role_inherited_3         | role_admin               | role_admin               | f            | 
+ role_inherited_3         | role_admin               | superuser                | t            | 
  role_inherited_34        | role_admin               | role_admin               | f            | 
  role_inherited_34        | role_admin               | superuser                | t            | 
  role_read_0              | role_admin               | superuser                | t            | 
  role_read_12             | role_admin               | role_admin               | f            | 
  role_read_12             | role_admin               | superuser                | t            | 
  role_read_12             | role_read_12_noinherit   | role_admin               | f            | 
- role_read_12_noinherit   | role_admin               | superuser                | t            | 
  role_read_12_noinherit   | role_admin               | role_admin               | f            | 
+ role_read_12_noinherit   | role_admin               | superuser                | t            | 
  role_read_34             | role_admin               | role_admin               | f            | 
  role_read_34             | role_admin               | superuser                | t            | 
  role_read_34             | role_inherited_3         | role_admin               | f            | db_3
  role_read_34             | role_inherited_34        | role_admin               | f            | 
  role_read_all_noinherit  | role_admin               | role_admin               | f            | 
  role_read_all_noinherit  | role_admin               | superuser                | t            | 
- role_read_all_with_admin | role_admin               | superuser                | t            | 
  role_read_all_with_admin | role_admin               | role_admin               | f            | 
+ role_read_all_with_admin | role_admin               | superuser                | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin               | f            | 
 (33 rows)
 
@@ -667,16 +667,16 @@ TABLE role_memberships;
  role_inherited_34        | role_admin               | role_admin               | f            | 
  role_inherited_34        | role_admin               | superuser                | t            | 
  role_read_0              | role_admin               | superuser                | t            | 
- role_read_12             | role_admin               | superuser                | t            | 
  role_read_12             | role_admin               | role_admin               | f            | 
+ role_read_12             | role_admin               | superuser                | t            | 
  role_read_12             | role_read_12_noinherit   | role_admin               | f            | 
  role_read_12_noinherit   | role_admin               | role_admin               | f            | 
  role_read_12_noinherit   | role_admin               | superuser                | t            | 
  role_read_34             | role_admin               | role_admin               | f            | 
  role_read_34             | role_admin               | superuser                | t            | 
  role_read_34             | role_inherited_34        | role_admin               | f            | 
- role_read_all_noinherit  | role_admin               | superuser                | t            | 
  role_read_all_noinherit  | role_admin               | role_admin               | f            | 
+ role_read_all_noinherit  | role_admin               | superuser                | t            | 
  role_read_all_with_admin | role_admin               | role_admin               | f            | 
  role_read_all_with_admin | role_admin               | superuser                | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin               | f            | 
