@@ -5,6 +5,7 @@
 
 CREATE ROLE role_admin LOGIN CREATEROLE CREATEDB;
 GRANT pg_read_all_data TO role_admin WITH ADMIN OPTION;
+GRANT pg_read_all_stats TO role_admin WITH ADMIN OPTION;
 
 -- Populate test databases.
 CREATE DATABASE db_0 OWNER role_admin;
@@ -82,6 +83,9 @@ GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0; -- notice
 -- Should not warn if adjusting admin option
 GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0 WITH ADMIN OPTION; -- silent
 GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0 WITH ADMIN OPTION; -- notice
+
+-- Cluster-wide role
+GRANT pg_read_all_stats TO role_read_0;
 
 -- Check membership table
 TABLE role_memberships;
@@ -243,6 +247,13 @@ SET ROLE role_read_12; -- error
 SELECT * FROM data; -- error
 
 \connect db_0
+
+-- Test cluster-wide role
+SET SESSION AUTHORIZATION role_read_0;
+SELECT application_name, query FROM pg_stat_activity WHERE datname = 'db_0';
+SET SESSION AUTHORIZATION role_read_12;
+SELECT application_name, query FROM pg_stat_activity;
+
 SET SESSION AUTHORIZATION role_admin;
 
 -- Should not warn if revoking admin option
