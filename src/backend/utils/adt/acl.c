@@ -5118,8 +5118,9 @@ roles_is_member_of(Oid roleid, enum RoleRecurseType type,
 		 * Find roles that memberid is directly a member of in the current
 		 * database
 		 */
-		append_role_memberships(roles_list, type, admin_of, admin_role,
-								memberid, databaseId, bf);
+		if (OidIsValid(databaseId))
+			append_role_memberships(roles_list, type, admin_of, admin_role,
+									memberid, databaseId, bf);
 
 		/* implement pg_database_owner implicit membership */
 		if (memberid == dba && OidIsValid(dba))
