@@ -498,6 +498,9 @@ RESET ROLE;
   </para>
 
   <para>
+  </para>
+
+  <para>
    To destroy a group role, use <link
    linkend="sql-droprole"><command>DROP ROLE</command></link>:
 <synopsis>
