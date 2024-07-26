@@ -3341,9 +3341,6 @@ pg_class_aclmask_ext(Oid table_oid, Oid roleid, AclMode mask,
 	bool		isNull;
 	Acl		   *acl;
 	Oid			ownerId;
-	Oid			databaseId = MyDatabaseId;
-
-	/* XXX: ^ Is this correct? */
 
 	/*
 	 * Must get the relation's tuple from pg_class
@@ -3430,7 +3427,7 @@ pg_class_aclmask_ext(Oid table_oid, Oid roleid, AclMode mask,
 	 * pg_read_all_data role, which allows read access to all relations.
 	 */
 	if (mask & ACL_SELECT && !(result & ACL_SELECT) &&
-		has_privs_of_role(roleid, ROLE_PG_READ_ALL_DATA, databaseId))
+		has_privs_of_role(roleid, ROLE_PG_READ_ALL_DATA, MyDatabaseId))
 		result |= ACL_SELECT;
 
 	/*
@@ -3442,7 +3439,7 @@ pg_class_aclmask_ext(Oid table_oid, Oid roleid, AclMode mask,
 	 */
 	if (mask & (ACL_INSERT | ACL_UPDATE | ACL_DELETE) &&
 		!(result & (ACL_INSERT | ACL_UPDATE | ACL_DELETE)) &&
-		has_privs_of_role(roleid, ROLE_PG_WRITE_ALL_DATA, databaseId))
+		has_privs_of_role(roleid, ROLE_PG_WRITE_ALL_DATA, MyDatabaseId))
 		result |= (mask & (ACL_INSERT | ACL_UPDATE | ACL_DELETE));
 
 	/*
@@ -3453,7 +3450,7 @@ pg_class_aclmask_ext(Oid table_oid, Oid roleid, AclMode mask,
 	 */
 	if (mask & ACL_MAINTAIN &&
 		!(result & ACL_MAINTAIN) &&
-		has_privs_of_role(roleid, ROLE_PG_MAINTAIN, databaseId))
+		has_privs_of_role(roleid, ROLE_PG_MAINTAIN, MyDatabaseId))
 		result |= ACL_MAINTAIN;
 
 	return result;
@@ -3670,9 +3667,6 @@ pg_namespace_aclmask_ext(Oid nsp_oid, Oid roleid,
 	bool		isNull;
 	Acl		   *acl;
 	Oid			ownerId;
-	Oid			databaseId = MyDatabaseId;
-
-	/* XXX ^ Is this correct? */
 
 	/* Superusers bypass all permission checking. */
 	if (superuser_arg(roleid))
@@ -3755,8 +3749,8 @@ pg_namespace_aclmask_ext(Oid nsp_oid, Oid roleid,
 	 * to all schemas.
 	 */
 	if (mask & ACL_USAGE && !(result & ACL_USAGE) &&
-		(has_privs_of_role(roleid, ROLE_PG_READ_ALL_DATA, databaseId) ||
-		 has_privs_of_role(roleid, ROLE_PG_WRITE_ALL_DATA, databaseId)))
+		(has_privs_of_role(roleid, ROLE_PG_READ_ALL_DATA, MyDatabaseId) ||
+		 has_privs_of_role(roleid, ROLE_PG_WRITE_ALL_DATA, MyDatabaseId)))
 		result |= ACL_USAGE;
 	return result;
 }
@@ -4212,7 +4206,6 @@ object_ownercheck(Oid classid, Oid objectid, Oid roleid)
 	}
 
 	return has_privs_of_role(roleid, ownerId, MyDatabaseId);
-	/* XXX: ^ Is this correct? */
 }
 
 /*
