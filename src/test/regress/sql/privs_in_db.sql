@@ -283,13 +283,13 @@ SELECT * FROM data; -- error
 
 -- Test cluster-wide role
 SET SESSION AUTHORIZATION role_read_0;
-SELECT application_name, query FROM pg_stat_activity WHERE datname = 'db_0';
+SELECT query FROM pg_stat_activity WHERE datname = 'db_0';
 SET SESSION AUTHORIZATION role_read_12;
-SELECT application_name, query FROM pg_stat_activity;
+SELECT query FROM pg_stat_activity WHERE datname = 'db_0';
 
 \connect db_3
 SET SESSION AUTHORIZATION role_read_34;
-SELECT application_name, query FROM pg_stat_activity;
+SELECT application_name, query FROM pg_stat_activity WHERE datname = 'db_3';
 
 \connect db_0
 SET SESSION AUTHORIZATION role_admin;
