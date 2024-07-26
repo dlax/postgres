@@ -89,6 +89,7 @@ GRANT pg_maintain TO role_read_12 IN DATABASE db_2;
 
 -- Cluster-wide role
 GRANT pg_read_all_stats TO role_read_0;
+GRANT pg_read_all_stats TO role_read_34 IN DATABASE db_3;  -- makes no sense XXX
 
 -- Check membership table
 TABLE role_memberships;
@@ -259,6 +260,11 @@ SELECT application_name, query FROM pg_stat_activity WHERE datname = 'db_0';
 SET SESSION AUTHORIZATION role_read_12;
 SELECT application_name, query FROM pg_stat_activity;
 
+\connect db_3
+SET SESSION AUTHORIZATION role_read_34;
+SELECT application_name, query FROM pg_stat_activity;
+
+\connect db_0
 SET SESSION AUTHORIZATION role_admin;
 
 -- Should not warn if revoking admin option

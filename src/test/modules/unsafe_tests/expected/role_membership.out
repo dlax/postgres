@@ -74,6 +74,7 @@ NOTICE:  role "role_read_0" has already been granted membership in role "pg_read
 GRANT pg_maintain TO role_read_12 IN DATABASE db_2;
 -- Cluster-wide role
 GRANT pg_read_all_stats TO role_read_0;
+GRANT pg_read_all_stats TO role_read_34 IN DATABASE db_3;  -- makes no sense XXX
 -- Check membership table
 TABLE role_memberships;
            role           |          member          |  grantor   | admin_option | datname 
@@ -90,6 +91,7 @@ TABLE role_memberships;
  pg_read_all_data         | role_read_all_with_admin | role_admin | t            | 
  pg_read_all_stats        | role_admin               | superuser  | t            | 
  pg_read_all_stats        | role_read_0              | role_admin | f            | 
+ pg_read_all_stats        | role_read_34             | role_admin | f            | db_3
  role_inherited_3         | role_admin               | role_admin | f            | 
  role_inherited_3         | role_admin               | superuser  | t            | 
  role_inherited_34        | role_admin               | role_admin | f            | 
@@ -109,7 +111,7 @@ TABLE role_memberships;
  role_read_all_with_admin | role_admin               | role_admin | f            | 
  role_read_all_with_admin | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
-(31 rows)
+(32 rows)
 
 -- Test membership privileges (db_1)
 \connect db_1
@@ -423,6 +425,20 @@ SELECT application_name, query FROM pg_stat_activity;
                             | <insufficient privilege>
 (6 rows)
 
+\connect db_3
+SET SESSION AUTHORIZATION role_read_34;
+SELECT application_name, query FROM pg_stat_activity;
+      application_name      |          query           
+----------------------------+--------------------------
+ pg_regress/role_membership | <insufficient privilege>
+                            | <insufficient privilege>
+                            | <insufficient privilege>
+                            | <insufficient privilege>
+                            | <insufficient privilege>
+                            | <insufficient privilege>
+(6 rows)
+
+\connect db_0
 SET SESSION AUTHORIZATION role_admin;
 -- Should not warn if revoking admin option
 REVOKE ADMIN OPTION FOR pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- silent
@@ -442,6 +458,47 @@ TABLE role_memberships;
  pg_read_all_data         | role_read_all_with_admin | role_admin | t            | 
  pg_read_all_stats        | role_admin               | superuser  | t            | 
  pg_read_all_stats        | role_read_0              | role_admin | f            | 
+ pg_read_all_stats        | role_read_34             | role_admin | f            | db_3
+ role_inherited_3         | role_admin               | role_admin | f            | 
+ role_inherited_3         | role_admin               | superuser  | t            | 
+ role_inherited_34        | role_admin               | role_admin | f            | 
+ role_inherited_34        | role_admin               | superuser  | t            | 
+ role_read_0              | role_admin               | superuser  | t            | 
+ role_read_12             | role_admin               | role_admin | f            | 
+ role_read_12             | role_admin               | superuser  | t            | 
+ role_read_12             | role_read_12_noinherit   | role_admin | f            | 
+ role_read_12_noinherit   | role_admin               | role_admin | f            | 
+ role_read_12_noinherit   | role_admin               | superuser  | t            | 
+ role_read_34             | role_admin               | role_admin | f            | 
+ role_read_34             | role_admin               | superuser  | t            | 
+ role_read_34             | role_inherited_3         | role_admin | f            | db_3
+ role_read_34             | role_inherited_34        | role_admin | f            | 
+ role_read_all_noinherit  | role_admin               | role_admin | f            | 
+ role_read_all_noinherit  | role_admin               | superuser  | t            | 
+ role_read_all_with_admin | role_admin               | role_admin | f            | 
+ role_read_all_with_admin | role_admin               | superuser  | t            | 
+ role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
+(32 rows)
+
+-- Should warn if revoking a non-existent membership
+REVOKE pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- success
+REVOKE pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- warning
+WARNING:  role "role_read_0" has not been granted membership in role "pg_read_all_data" by role "role_admin"
+TABLE role_memberships;
+           role           |          member          |  grantor   | admin_option | datname 
+--------------------------+--------------------------+------------+--------------+---------
+ pg_maintain              | role_admin               | superuser  | t            | 
+ pg_maintain              | role_read_12             | role_admin | f            | db_2
+ pg_read_all_data         | role_admin               | superuser  | t            | 
+ pg_read_all_data         | role_read_12             | role_admin | f            | db_1
+ pg_read_all_data         | role_read_12             | role_admin | f            | db_2
+ pg_read_all_data         | role_read_34             | role_admin | t            | db_3
+ pg_read_all_data         | role_read_34             | role_admin | t            | db_4
+ pg_read_all_data         | role_read_all_noinherit  | role_admin | f            | db_0
+ pg_read_all_data         | role_read_all_with_admin | role_admin | t            | 
+ pg_read_all_stats        | role_admin               | superuser  | t            | 
+ pg_read_all_stats        | role_read_0              | role_admin | f            | 
+ pg_read_all_stats        | role_read_34             | role_admin | f            | db_3
  role_inherited_3         | role_admin               | role_admin | f            | 
  role_inherited_3         | role_admin               | superuser  | t            | 
  role_inherited_34        | role_admin               | role_admin | f            | 
@@ -463,17 +520,14 @@ TABLE role_memberships;
  role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
 (31 rows)
 
--- Should warn if revoking a non-existent membership
-REVOKE pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- success
-REVOKE pg_read_all_data FROM role_read_0 IN DATABASE db_0; -- warning
-WARNING:  role "role_read_0" has not been granted membership in role "pg_read_all_data" by role "role_admin"
+-- Revoke should only apply to the specified level
+REVOKE pg_read_all_data FROM role_read_12; -- warning
 TABLE role_memberships;
            role           |          member          |  grantor   | admin_option | datname 
 --------------------------+--------------------------+------------+--------------+---------
  pg_maintain              | role_admin               | superuser  | t            | 
  pg_maintain              | role_read_12             | role_admin | f            | db_2
  pg_read_all_data         | role_admin               | superuser  | t            | 
- pg_read_all_data         | role_read_12             | role_admin | f            | db_1
  pg_read_all_data         | role_read_12             | role_admin | f            | db_2
  pg_read_all_data         | role_read_34             | role_admin | t            | db_3
  pg_read_all_data         | role_read_34             | role_admin | t            | db_4
@@ -481,6 +535,7 @@ TABLE role_memberships;
  pg_read_all_data         | role_read_all_with_admin | role_admin | t            | 
  pg_read_all_stats        | role_admin               | superuser  | t            | 
  pg_read_all_stats        | role_read_0              | role_admin | f            | 
+ pg_read_all_stats        | role_read_34             | role_admin | f            | db_3
  role_inherited_3         | role_admin               | role_admin | f            | 
  role_inherited_3         | role_admin               | superuser  | t            | 
  role_inherited_34        | role_admin               | role_admin | f            | 
@@ -501,42 +556,6 @@ TABLE role_memberships;
  role_read_all_with_admin | role_admin               | superuser  | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
 (30 rows)
-
--- Revoke should only apply to the specified level
-REVOKE pg_read_all_data FROM role_read_12; -- warning
-TABLE role_memberships;
-           role           |          member          |  grantor   | admin_option | datname 
---------------------------+--------------------------+------------+--------------+---------
- pg_maintain              | role_admin               | superuser  | t            | 
- pg_maintain              | role_read_12             | role_admin | f            | db_2
- pg_read_all_data         | role_admin               | superuser  | t            | 
- pg_read_all_data         | role_read_12             | role_admin | f            | db_2
- pg_read_all_data         | role_read_34             | role_admin | t            | db_3
- pg_read_all_data         | role_read_34             | role_admin | t            | db_4
- pg_read_all_data         | role_read_all_noinherit  | role_admin | f            | db_0
- pg_read_all_data         | role_read_all_with_admin | role_admin | t            | 
- pg_read_all_stats        | role_admin               | superuser  | t            | 
- pg_read_all_stats        | role_read_0              | role_admin | f            | 
- role_inherited_3         | role_admin               | role_admin | f            | 
- role_inherited_3         | role_admin               | superuser  | t            | 
- role_inherited_34        | role_admin               | role_admin | f            | 
- role_inherited_34        | role_admin               | superuser  | t            | 
- role_read_0              | role_admin               | superuser  | t            | 
- role_read_12             | role_admin               | role_admin | f            | 
- role_read_12             | role_admin               | superuser  | t            | 
- role_read_12             | role_read_12_noinherit   | role_admin | f            | 
- role_read_12_noinherit   | role_admin               | role_admin | f            | 
- role_read_12_noinherit   | role_admin               | superuser  | t            | 
- role_read_34             | role_admin               | role_admin | f            | 
- role_read_34             | role_admin               | superuser  | t            | 
- role_read_34             | role_inherited_3         | role_admin | f            | db_3
- role_read_34             | role_inherited_34        | role_admin | f            | 
- role_read_all_noinherit  | role_admin               | role_admin | f            | 
- role_read_all_noinherit  | role_admin               | superuser  | t            | 
- role_read_all_with_admin | role_admin               | role_admin | f            | 
- role_read_all_with_admin | role_admin               | superuser  | t            | 
- role_read_all_with_admin | role_read_all_noinherit  | role_admin | f            | 
-(29 rows)
 
 -- Ensure cluster-wide admin option can grant cluster-wide and in specific databases
 CREATE ROLE role_granted;
@@ -563,6 +582,7 @@ TABLE role_memberships;
  pg_read_all_data         | role_read_all_with_admin | role_admin               | t            | 
  pg_read_all_stats        | role_admin               | superuser                | t            | 
  pg_read_all_stats        | role_read_0              | role_admin               | f            | 
+ pg_read_all_stats        | role_read_34             | role_admin               | f            | db_3
  role_granted             | role_admin               | superuser                | t            | 
  role_inherited_3         | role_admin               | role_admin               | f            | 
  role_inherited_3         | role_admin               | superuser                | t            | 
@@ -583,7 +603,7 @@ TABLE role_memberships;
  role_read_all_with_admin | role_admin               | role_admin               | f            | 
  role_read_all_with_admin | role_admin               | superuser                | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin               | f            | 
-(33 rows)
+(34 rows)
 
 -- Ensure database-specific admin option can only grant within that database
 SET SESSION AUTHORIZATION role_read_34;
@@ -641,6 +661,7 @@ TABLE role_memberships;
  pg_read_all_data         | role_read_all_with_admin | role_admin               | t            | 
  pg_read_all_stats        | role_admin               | superuser                | t            | 
  pg_read_all_stats        | role_read_0              | role_admin               | f            | 
+ pg_read_all_stats        | role_read_34             | role_admin               | f            | db_3
  role_granted             | role_admin               | superuser                | t            | 
  role_inherited_3         | role_admin               | role_admin               | f            | 
  role_inherited_3         | role_admin               | superuser                | t            | 
@@ -661,7 +682,7 @@ TABLE role_memberships;
  role_read_all_with_admin | role_admin               | role_admin               | f            | 
  role_read_all_with_admin | role_admin               | superuser                | t            | 
  role_read_all_with_admin | role_read_all_noinherit  | role_admin               | f            | 
-(35 rows)
+(36 rows)
 
 -- Should clean up the membership table when dropping a database
 DROP DATABASE db_4;
