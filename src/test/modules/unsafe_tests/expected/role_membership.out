@@ -1,7 +1,28 @@
 --
 -- Tests for database-specific role memberships.
--- This is unsafe because roles and databases will added / removed / modified.
 --
+-- Clean up in case a prior regression run failed
+-- Suppress NOTICE messages when users/groups don't exist
+SET client_min_messages TO 'warning';
+DROP ROLE IF EXISTS regress_priv_group1;
+DROP ROLE IF EXISTS regress_priv_group2;
+DROP DATABASE IF EXISTS db_4;
+DROP DATABASE IF EXISTS db_3;
+DROP DATABASE IF EXISTS db_2;
+DROP DATABASE IF EXISTS db_1;
+DROP ROLE IF EXISTS role_granted;
+DROP ROLE IF EXISTS role_read_34;
+DROP ROLE IF EXISTS role_inherited_3;
+DROP ROLE IF EXISTS role_inherited_34;
+DROP ROLE IF EXISTS role_read_0;
+DROP ROLE IF EXISTS role_read_12;
+DROP ROLE IF EXISTS role_read_12_noinherit;
+DROP ROLE IF EXISTS role_read_all_noinherit;
+DROP ROLE IF EXISTS role_read_all_with_admin;
+DROP DATABASE IF EXISTS db_0;
+DROP ROLE IF EXISTS role_admin;
+RESET client_min_messages;
+-- test proper begins here
 CREATE ROLE role_admin LOGIN CREATEROLE CREATEDB;
 GRANT pg_read_all_data TO role_admin WITH ADMIN OPTION;
 GRANT pg_read_all_stats TO role_admin WITH ADMIN OPTION;
