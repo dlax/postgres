@@ -6,6 +6,7 @@
 CREATE ROLE role_admin LOGIN CREATEROLE CREATEDB;
 GRANT pg_read_all_data TO role_admin WITH ADMIN OPTION;
 GRANT pg_read_all_stats TO role_admin WITH ADMIN OPTION;
+GRANT pg_maintain TO role_admin WITH ADMIN OPTION;
 
 -- Populate test databases.
 CREATE DATABASE db_0 OWNER role_admin;
@@ -84,6 +85,8 @@ GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0; -- notice
 GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0 WITH ADMIN OPTION; -- silent
 GRANT pg_read_all_data TO role_read_0 IN DATABASE db_0 WITH ADMIN OPTION; -- notice
 
+GRANT pg_maintain TO role_read_12 IN DATABASE db_2;
+
 -- Cluster-wide role
 GRANT pg_read_all_stats TO role_read_0;
 
@@ -109,6 +112,7 @@ SET ROLE role_read_12_noinherit;
 SELECT * FROM data; -- error
 
 SET SESSION AUTHORIZATION role_read_12;
+VACUUM data; -- error
 SET ROLE pg_read_all_data; -- success
 
 SET SESSION AUTHORIZATION role_inherited_34;
@@ -148,6 +152,7 @@ SET ROLE role_read_12_noinherit;
 SELECT * FROM data; -- error
 
 SET SESSION AUTHORIZATION role_read_12;
+VACUUM data; -- success
 SET ROLE pg_read_all_data; -- success
 
 SET SESSION AUTHORIZATION role_inherited_34;
