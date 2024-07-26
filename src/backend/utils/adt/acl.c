@@ -5157,14 +5157,15 @@ roles_is_member_of(Oid roleid, enum RoleRecurseType type,
 
 /*
  * Does member have the privileges of role (directly or indirectly) in
- * specified database or cluster-wise?
+ * specified database or cluster-wide?
  *
  * This is defined not to recurse through grants that are not inherited,
  * and only inherited grants confer the associated privileges automatically.
  *
  * See also member_can_set_role, below.
  *
- * TODO: instead of passing InvalidOid for the 'database' argument when checking for cluster-wise privileges, use a dedicated struct, e.g.:
+ * TODO: instead of passing InvalidOid for the 'database' argument when
+ * checking for cluster-wide privileges, use a dedicated struct, e.g.:
  *   typedef struct Membership  // not sure about the name?
  *   {
  *      Oid role;
